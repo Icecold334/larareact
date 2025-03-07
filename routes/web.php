@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -14,6 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('kasir', function () {
         return Inertia::render('kasir');
     })->name('kasir');
+    Route::resource('supplier', SupplierController::class);
 });
 
 require __DIR__ . '/settings.php';

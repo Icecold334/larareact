@@ -18,6 +18,11 @@ const mainNavItems: NavItem[] = [
         url: '/kasir',
         icon: Icon.CoinsIcon,
     },
+    {
+        title: 'Supplier',
+        url: '/supplier',
+        icon: Icon.ClipboardCheck,
+    },
 ];
 
 const footerNavItems: NavItem[] = [
