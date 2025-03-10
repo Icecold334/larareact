@@ -12,10 +12,13 @@ class SupplierController extends Controller
     /**
      * Display a listing of the resource.
      */
+    public function fetch($id = 0)
+    {
+        return $id > 0 ? Supplier::find($id) : Supplier::all();
+    }
     public function index()
     {
-        $suppliers = Supplier::all();
-        return Inertia::render('supplier/index', compact('suppliers'));
+        return Inertia::render('supplier/index');
     }
 
     /**
@@ -31,7 +34,15 @@ class SupplierController extends Controller
      */
     public function store(StoreSupplierRequest $request)
     {
-        //
+        $nama = $request->nama;
+        $alamat = $request->alamat;
+        $telepon = $request->telepon;
+        Supplier::create([
+            'nama' => $nama,
+            'alamat' => $alamat,
+            'telepon' => $telepon
+        ]);
+        return Inertia::clearHistory();
     }
 
     /**

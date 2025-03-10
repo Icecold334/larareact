@@ -1,4 +1,82 @@
 ('use client');
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
+import * as React from 'react';
+
+import { cn } from '@/lib/utils';
+
+const Dialog = DialogPrimitive.Root;
+
+const DialogTrigger = DialogPrimitive.Trigger;
+
+const DialogPortal = DialogPrimitive.Portal;
+
+const DialogClose = DialogPrimitive.Close;
+
+const DialogOverlay = React.forwardRef<
+    React.ElementRef<typeof DialogPrimitive.Overlay>,
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+    <DialogPrimitive.Overlay
+        ref={ref}
+        className={cn(
+            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80',
+            className,
+        )}
+        {...props}
+    />
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+
+const DialogContent = React.forwardRef<
+    React.ElementRef<typeof DialogPrimitive.Content>,
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+    <DialogPortal>
+        <DialogOverlay />
+        <DialogPrimitive.Content
+            ref={ref}
+            className={cn(
+                'bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] fixed top-[50%] left-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border p-6 shadow-lg duration-200 sm:rounded-lg',
+                className,
+            )}
+            {...props}
+        >
+            {children}
+            <DialogPrimitive.Close className="ring-offset-background focus:ring-ring data-[state=open]:bg-accent data-[state=open]:text-muted-foreground absolute top-4 right-4 rounded-sm opacity-70 transition-opacity hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-none disabled:pointer-events-none">
+                <X className="h-4 w-4" />
+                <span className="sr-only">Close</span>
+            </DialogPrimitive.Close>
+        </DialogPrimitive.Content>
+    </DialogPortal>
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
+
+const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)} {...props} />
+);
+DialogHeader.displayName = 'DialogHeader';
+
+const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)} {...props} />
+);
+DialogFooter.displayName = 'DialogFooter';
+
+const DialogTitle = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Title>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>>(
+    ({ className, ...props }, ref) => (
+        <DialogPrimitive.Title ref={ref} className={cn('text-lg leading-none font-semibold tracking-tight', className)} {...props} />
+    ),
+);
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
+
+const DialogDescription = React.forwardRef<
+    React.ElementRef<typeof DialogPrimitive.Description>,
+    React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
+>(({ className, ...props }, ref) => <DialogPrimitive.Description ref={ref} className={cn('text-muted-foreground text-sm', className)} {...props} />);
+DialogDescription.displayName = DialogPrimitive.Description.displayName;
+
+export { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger };
+
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -11,10 +89,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem } from '@/types';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import {
     ColumnDef,
     ColumnFiltersState,
@@ -28,10 +107,11 @@ import {
     useReactTable,
 } from '@tanstack/react-table';
 import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from 'lucide-react';
-import * as React from 'react';
 import { useEffect, useState } from 'react';
+import Create from './create';
 interface Supplier {
     id: string;
+    number: number;
     nama: string;
     alamat: string;
     telepon: string;
@@ -62,7 +142,8 @@ export const columns: ColumnDef<Supplier>[] = [
                 </Button>
             );
         },
-        cell: ({ row }) => <div className="capitalize">{row.index + 1}</div>,
+        cell: ({ row }) => <div className="capitalize">{row.getValue('number')}</div>,
+        enableHiding: false,
     },
     {
         accessorKey: 'nama',
@@ -77,22 +158,20 @@ export const columns: ColumnDef<Supplier>[] = [
         cell: ({ row }) => <div className="capitalize">{row.getValue('nama')}</div>,
     },
     {
+        accessorKey: 'telepon',
+        header: () => {
+            return 'Telepon';
+        },
+        cell: ({ row }) => <div className="text-right font-medium">{row.getValue('telepon')}</div>,
+    },
+    {
         accessorKey: 'alamat',
-        header: ({ column }) => {
-            return (
-                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
-                    Alamat
-                    <ArrowUpDown />
-                </Button>
-            );
+        header: () => {
+            return 'Alamat';
         },
         cell: ({ row }) => <div className="lowercase">{row.getValue('alamat')}</div>,
     },
-    {
-        accessorKey: 'telepon',
-        header: () => <div className="text-right">Nomo Telepon</div>,
-        cell: ({ row }) => <div className="text-right font-medium">{row.getValue('telepon')}</div>,
-    },
+
     {
         id: 'actions',
         enableHiding: false,
@@ -119,7 +198,7 @@ export const columns: ColumnDef<Supplier>[] = [
         },
     },
 ];
-export function DataTable({ columns, data }: { columns: ColumnDef<Supplier>[]; data: Supplier[] }) {
+function DataTable({ columns, data }: { columns: ColumnDef<Supplier>[]; data: Supplier[] }) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -160,9 +239,21 @@ export function DataTable({ columns, data }: { columns: ColumnDef<Supplier>[]; d
                                 Tampilkan <ChevronDown />
                             </Button>
                         </DropdownMenuTrigger>
-                        <Link className={buttonVariants()} href="supplier/create" prefetch>
-                            <Plus /> Tambah Supplier
-                        </Link>
+                        <Dialog>
+                            <DialogTrigger className={buttonVariants()}>
+                                <Plus /> Tambah Supplier
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>Tambah Supplier</DialogTitle>
+                                    <DialogDescription>
+                                        <Create />
+                                    </DialogDescription>
+                                </DialogHeader>
+                            </DialogContent>
+                        </Dialog>
+
+                        {/* <Link href="supplier/create" prefetch></Link> */}
                     </div>
                     <DropdownMenuContent align="end">
                         {table
@@ -239,29 +330,52 @@ const breadcrumbs: BreadcrumbItem[] = [
         href: '/supplier',
     },
 ];
-interface IndexProps {
-    suppliers: Supplier[]; // Props langsung tanpa PageProps
-}
-export default function Index({ suppliers }: IndexProps) {
+
+export default function Index() {
     const [tableData, setTableData] = useState<Supplier[]>([]);
+    const [isLoading, setIsLoading] = useState<boolean>(true);
+    const fetchSuppliers = async () => {
+        try {
+            const response = await fetch('/suppliers');
+            const data = await response.json();
 
+            // Mapping hanya field yang dibutuhkan
+            const formattedData = data.map((supplier: Supplier, i: number) => ({
+                id: supplier.id,
+                number: i + 1,
+                nama: supplier.nama,
+                alamat: supplier.alamat,
+                telepon: supplier.telepon,
+            }));
+
+            setTableData(formattedData);
+        } catch (error) {
+            console.error('Error fetching suppliers:', error);
+        } finally {
+            setIsLoading(false);
+        }
+    };
     useEffect(() => {
-        // Mapping hanya field yang dibutuhkan
-        const data = suppliers.map((supplier: Supplier) => ({
-            id: supplier.id,
-            nama: supplier.nama,
-            alamat: supplier.alamat,
-            telepon: supplier.telepon,
-        }));
+        fetchSuppliers();
+    }, []);
+    useEffect(() => {
+        window.addEventListener('refresh', fetchSuppliers);
+        return () => {
+            window.removeEventListener('refresh', fetchSuppliers);
+        };
+    }, []);
 
-        // Update state
-        setTableData((prevData) => [...prevData, ...data]);
-    }, [suppliers]);
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Supplier" />
-
-            <DataTable columns={columns} data={tableData} />
+            {isLoading ? (
+                <>
+                    <Skeleton className="mt-10 h-10 w-full" />
+                    <Skeleton className="h-72 w-full" />
+                </>
+            ) : (
+                <DataTable columns={columns} data={tableData} />
+            )}
         </AppLayout>
     );
 }

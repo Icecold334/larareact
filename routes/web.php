@@ -15,6 +15,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('kasir', function () {
         return Inertia::render('kasir');
     })->name('kasir');
+    Route::get('/suppliers', [SupplierController::class, 'fetch']);
     Route::resource('supplier', SupplierController::class);
 });
 
