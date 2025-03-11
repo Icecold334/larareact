@@ -8,43 +8,66 @@ import { router } from '@inertiajs/react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 const formSchema = z.object({
-    nama: z.string().min(1, {
-        message: 'Username must be at least 2 characters.',
+    id: z.number().int().nullable().optional(),
+    nama: z.string().min(2, {
+        message: 'Nama harus minimal 2 karakter.',
     }),
-    telepon: z.string().min(1, {
-        message: 'Username must be at least 2 characters.',
+    telepon: z.string().min(11, {
+        message: 'Nomor telepon harus minimal 11 karakter.',
     }),
-    alamat: z.string().min(1, {
-        message: 'Username must be at least 2 characters.',
+    alamat: z.string().min(5, {
+        message: 'Alamat harus minimal 5 karakter.',
     }),
 });
-
-export default function () {
+interface Supplier {
+    id: number | null;
+    number: number;
+    nama: string | null;
+    alamat: string | null;
+    telepon: string | null;
+}
+export default function ({ supplier }: { supplier: Supplier }) {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            nama: '',
-            alamat: '',
-            telepon: '',
+            id: supplier?.id ? Number(supplier.id) : undefined,
+            nama: supplier?.nama || '',
+            alamat: supplier?.alamat || '',
+            telepon: supplier?.telepon || '',
         },
     });
-
-    async function onSubmit(values: z.infer<typeof formSchema>) {
-        router.post('/supplier', values);
+    const showAlert = (status: boolean, text: string) => {
         const event = new CustomEvent('alert', {
             detail: {
-                title: 'Berhasil!',
-                icon: 'success',
-                text: 'Supplier berhasil disimpan!',
-            },
-        });
-        const refresh = new CustomEvent('refresh', {
-            detail: {
-                title: 'Berhasil!',
+                title: status ? 'Berhasil!' : 'Gagal!',
+                icon: status ? 'success' : 'error',
+                text: `Supplier ${status ? 'berhasil' : 'gagal'} di${text}!`,
+                status,
             },
         });
         window.dispatchEvent(event);
-        window.dispatchEvent(refresh);
+    };
+
+    async function onSubmit(values: z.infer<typeof formSchema>) {
+        if (values.id) {
+            router.put(`/supplier/${values.id}`, values, {
+                onSuccess: () => {
+                    showAlert(true, 'diubah');
+                },
+                onError: () => {
+                    showAlert(false, 'diubah');
+                },
+            });
+        } else {
+            router.post('/supplier', values, {
+                onSuccess: () => {
+                    showAlert(true, 'disimpan');
+                },
+                onError: () => {
+                    showAlert(false, 'disimpan');
+                },
+            });
+        }
     }
 
     return (

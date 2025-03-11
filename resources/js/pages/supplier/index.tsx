@@ -1,18 +1,43 @@
 ('use client');
 import * as DialogPrimitive from '@radix-ui/react-dialog';
-import { X } from 'lucide-react';
+import { Pen, X } from 'lucide-react';
 import * as React from 'react';
 
+import { Button, buttonVariants } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import AppLayout from '@/layouts/app-layout';
 import { cn } from '@/lib/utils';
-
+import { type BreadcrumbItem } from '@/types';
+import { Head } from '@inertiajs/react';
+import {
+    ColumnDef,
+    ColumnFiltersState,
+    SortingState,
+    VisibilityState,
+    flexRender,
+    getCoreRowModel,
+    getFilteredRowModel,
+    getPaginationRowModel,
+    getSortedRowModel,
+    useReactTable,
+} from '@tanstack/react-table';
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import Create from './create';
 const Dialog = DialogPrimitive.Root;
-
 const DialogTrigger = DialogPrimitive.Trigger;
-
 const DialogPortal = DialogPrimitive.Portal;
-
 const DialogClose = DialogPrimitive.Close;
-
 const DialogOverlay = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Overlay>,
     React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
@@ -20,7 +45,7 @@ const DialogOverlay = React.forwardRef<
     <DialogPrimitive.Overlay
         ref={ref}
         className={cn(
-            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/80',
+            'data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/10',
             className,
         )}
         {...props}
@@ -56,59 +81,22 @@ const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivEleme
     <div className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)} {...props} />
 );
 DialogHeader.displayName = 'DialogHeader';
-
 const DialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
     <div className={cn('flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2', className)} {...props} />
 );
 DialogFooter.displayName = 'DialogFooter';
-
 const DialogTitle = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Title>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>>(
     ({ className, ...props }, ref) => (
         <DialogPrimitive.Title ref={ref} className={cn('text-lg leading-none font-semibold tracking-tight', className)} {...props} />
     ),
 );
 DialogTitle.displayName = DialogPrimitive.Title.displayName;
-
 const DialogDescription = React.forwardRef<
     React.ElementRef<typeof DialogPrimitive.Description>,
     React.ComponentPropsWithoutRef<typeof DialogPrimitive.Description>
 >(({ className, ...props }, ref) => <DialogPrimitive.Description ref={ref} className={cn('text-muted-foreground text-sm', className)} {...props} />);
 DialogDescription.displayName = DialogPrimitive.Description.displayName;
-
 export { Dialog, DialogClose, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogOverlay, DialogPortal, DialogTitle, DialogTrigger };
-
-import { Button, buttonVariants } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import {
-    DropdownMenu,
-    DropdownMenuCheckboxItem,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { Input } from '@/components/ui/input';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import AppLayout from '@/layouts/app-layout';
-import { type BreadcrumbItem } from '@/types';
-import { Head } from '@inertiajs/react';
-import {
-    ColumnDef,
-    ColumnFiltersState,
-    SortingState,
-    VisibilityState,
-    flexRender,
-    getCoreRowModel,
-    getFilteredRowModel,
-    getPaginationRowModel,
-    getSortedRowModel,
-    useReactTable,
-} from '@tanstack/react-table';
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from 'lucide-react';
-import { useEffect, useState } from 'react';
-import Create from './create';
 interface Supplier {
     id: string;
     number: number;
@@ -116,24 +104,25 @@ interface Supplier {
     alamat: string;
     telepon: string;
 }
-export const columns: ColumnDef<Supplier>[] = [
-    {
-        id: 'select',
-        header: ({ table }) => (
-            <Checkbox
-                checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
-                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                aria-label="Select all"
-            />
-        ),
-        cell: ({ row }) => (
-            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
-        ),
-        enableSorting: false,
-        enableHiding: false,
-    },
+const columns = (handleOpenDialog: (supplier: Supplier | null) => void): ColumnDef<Supplier>[] => [
+    // {
+    //     id: 'select',
+    //     header: ({ table }) => (
+    //         <Checkbox
+    //             checked={table.getIsAllPageRowsSelected() || (table.getIsSomePageRowsSelected() && 'indeterminate')}
+    //             onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+    //             aria-label="Select all"
+    //         />
+    //     ),
+    //     cell: ({ row }) => (
+    //         <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
+    //     ),
+    //     enableSorting: false,
+    //     enableHiding: false,
+    // },
     {
         accessorKey: 'number',
+        size: 3,
         header: ({ column }) => {
             return (
                 <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}>
@@ -142,7 +131,7 @@ export const columns: ColumnDef<Supplier>[] = [
                 </Button>
             );
         },
-        cell: ({ row }) => <div className="capitalize">{row.getValue('number')}</div>,
+        cell: ({ row }) => <div className="text-center capitalize">{row.getValue('number')}</div>,
         enableHiding: false,
     },
     {
@@ -169,15 +158,13 @@ export const columns: ColumnDef<Supplier>[] = [
         header: () => {
             return 'Alamat';
         },
-        cell: ({ row }) => <div className="lowercase">{row.getValue('alamat')}</div>,
+        cell: ({ row }) => <div className="">{row.getValue('alamat')}</div>,
     },
-
     {
         id: 'actions',
         enableHiding: false,
         cell: ({ row }) => {
-            const payment = row.original;
-
+            const supplier = row.original;
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -187,10 +174,12 @@ export const columns: ColumnDef<Supplier>[] = [
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(payment.id)}>Copy payment ID</DropdownMenuItem>
+                        {/* <DropdownMenuLabel>Actions</DropdownMenuLabel> */}
+                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(supplier.telepon)}>Salin Nomor Telepon</DropdownMenuItem>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>View customer</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleOpenDialog(supplier)}>
+                            <Pen /> Edit Supplier
+                        </DropdownMenuItem>
                         <DropdownMenuItem>View payment details</DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
@@ -198,7 +187,27 @@ export const columns: ColumnDef<Supplier>[] = [
         },
     },
 ];
-function DataTable({ columns, data }: { columns: ColumnDef<Supplier>[]; data: Supplier[] }) {
+const breadcrumbs: BreadcrumbItem[] = [
+    {
+        title: 'Daftar Supplier',
+        href: '/supplier',
+    },
+];
+function DataTable({
+    columns,
+    data,
+    selectedSupplier,
+    dialogOpen,
+    setDialogOpen,
+    handleOpenDialog,
+}: {
+    handleOpenDialog: (supplier: Supplier) => void;
+    columns: ColumnDef<Supplier>[];
+    data: Supplier[];
+    selectedSupplier: Supplier | null;
+    dialogOpen: boolean;
+    setDialogOpen: (open: boolean) => void;
+}) {
     const [sorting, setSorting] = React.useState<SortingState>([]);
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
     const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -239,15 +248,15 @@ function DataTable({ columns, data }: { columns: ColumnDef<Supplier>[]; data: Su
                                 Tampilkan <ChevronDown />
                             </Button>
                         </DropdownMenuTrigger>
-                        <Dialog>
-                            <DialogTrigger className={buttonVariants()}>
-                                <Plus /> Tambah Supplier
-                            </DialogTrigger>
+                        <Button className={buttonVariants()} onClick={() => handleOpenDialog(null)}>
+                            <Plus /> Tambah Supplier
+                        </Button>
+                        <Dialog onOpenChange={setDialogOpen} open={dialogOpen}>
                             <DialogContent>
                                 <DialogHeader>
-                                    <DialogTitle>Tambah Supplier</DialogTitle>
+                                    <DialogTitle>{selectedSupplier ? `Edit Supplier: ${selectedSupplier.nama}` : 'Tambah Supplier'}</DialogTitle>
                                     <DialogDescription>
-                                        <Create />
+                                        <Create supplier={selectedSupplier} />
                                     </DialogDescription>
                                 </DialogHeader>
                             </DialogContent>
@@ -301,7 +310,7 @@ function DataTable({ columns, data }: { columns: ColumnDef<Supplier>[]; data: Su
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    Supplier ridak ditemukan
+                                    Supplier tidak ditemukan
                                 </TableCell>
                             </TableRow>
                         )}
@@ -324,14 +333,13 @@ function DataTable({ columns, data }: { columns: ColumnDef<Supplier>[]; data: Su
         </div>
     );
 }
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Daftar Supplier',
-        href: '/supplier',
-    },
-];
-
 export default function Index() {
+    const [selectedSupplier, setSelectedSupplier] = useState<Supplier | null>(null);
+    const handleOpenDialog = (supplier: Supplier) => {
+        setSelectedSupplier(supplier);
+        setDialogOpen(true);
+    };
+    const [dialogOpen, setDialogOpen] = useState(false);
     const [tableData, setTableData] = useState<Supplier[]>([]);
     const [isLoading, setIsLoading] = useState<boolean>(true);
     const fetchSuppliers = async () => {
@@ -359,10 +367,13 @@ export default function Index() {
         fetchSuppliers();
     }, []);
     useEffect(() => {
-        window.addEventListener('refresh', fetchSuppliers);
-        return () => {
-            window.removeEventListener('refresh', fetchSuppliers);
-        };
+        window.addEventListener('alert', (event: Event) => {
+            const data = (event as CustomEvent).detail;
+            if (data.status) {
+                setDialogOpen(false);
+                fetchSuppliers();
+            }
+        });
     }, []);
 
     return (
@@ -374,7 +385,14 @@ export default function Index() {
                     <Skeleton className="h-72 w-full" />
                 </>
             ) : (
-                <DataTable columns={columns} data={tableData} />
+                <DataTable
+                    columns={columns(handleOpenDialog)}
+                    handleOpenDialog={handleOpenDialog}
+                    data={tableData}
+                    dialogOpen={dialogOpen}
+                    setDialogOpen={setDialogOpen}
+                    selectedSupplier={selectedSupplier}
+                />
             )}
         </AppLayout>
     );

@@ -37,12 +37,19 @@ class SupplierController extends Controller
         $nama = $request->nama;
         $alamat = $request->alamat;
         $telepon = $request->telepon;
-        Supplier::create([
-            'nama' => $nama,
-            'alamat' => $alamat,
-            'telepon' => $telepon
-        ]);
-        return Inertia::clearHistory();
+
+        try {
+            Supplier::create([
+                'nama' => $nama,
+                'alamat' => $alamat,
+                'telepon' => $telepon
+            ]);
+            return Inertia::clearHistory();
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -66,7 +73,21 @@ class SupplierController extends Controller
      */
     public function update(UpdateSupplierRequest $request, Supplier $supplier)
     {
-        //
+        $nama = $request->nama;
+        $alamat = $request->alamat;
+        $telepon = $request->telepon;
+        try {
+            $supplier->update([
+                'nama' => $nama,
+                'alamat' => $alamat,
+                'telepon' => $telepon
+            ]);
+            return Inertia::clearHistory();
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
