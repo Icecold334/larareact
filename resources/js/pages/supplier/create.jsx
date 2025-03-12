@@ -19,24 +19,22 @@ const formSchema = z.object({
         message: 'Alamat harus minimal 5 karakter.',
     }),
 });
-interface Supplier {
-    id: number | null;
-    number: number;
-    nama: string | null;
-    alamat: string | null;
-    telepon: string | null;
-}
-export default function ({ supplier }: { supplier: Supplier }) {
-    const form = useForm<z.infer<typeof formSchema>>({
-        resolver: zodResolver(formSchema),
-        defaultValues: {
-            id: supplier?.id ? Number(supplier.id) : undefined,
-            nama: supplier?.nama || '',
-            alamat: supplier?.alamat || '',
-            telepon: supplier?.telepon || '',
-        },
-    });
-    const showAlert = (status: boolean, text: string) => {
+
+export default function (supplier) {
+    const form =
+        useForm <
+        z.infer <
+        typeof formSchema >>
+            {
+                resolver: zodResolver(formSchema),
+                defaultValues: {
+                    id: supplier?.id ? Number(supplier.id) : undefined,
+                    nama: supplier?.nama || '',
+                    alamat: supplier?.alamat || '',
+                    telepon: supplier?.telepon || '',
+                },
+            };
+    const showAlert = (status, text) => {
         const event = new CustomEvent('alert', {
             detail: {
                 title: status ? 'Berhasil!' : 'Gagal!',
@@ -48,7 +46,7 @@ export default function ({ supplier }: { supplier: Supplier }) {
         window.dispatchEvent(event);
     };
 
-    async function onSubmit(values: z.infer<typeof formSchema>) {
+    async function onSubmit(values) {
         if (values.id) {
             router.put(`/supplier/${values.id}`, values, {
                 onSuccess: () => {

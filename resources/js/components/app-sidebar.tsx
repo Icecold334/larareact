@@ -2,19 +2,19 @@ import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { type NavItem } from '@/types';
+import { type NavGroup, type NavItem } from '@/types';
 import { Link } from '@inertiajs/react';
 import * as Icon from 'lucide-react';
 import AppLogo from './app-logo';
 
-const mainNavItems: NavItem[] = [
+const mainNavItems: (NavItem | NavGroup)[] = [
     {
         title: 'Dashboard',
         url: '/dashboard',
         icon: Icon.LayoutGrid,
     },
     {
-        title: 'Kasir',
+        title: 'Transaksi',
         url: '/kasir',
         icon: Icon.CoinsIcon,
     },
@@ -23,7 +23,21 @@ const mainNavItems: NavItem[] = [
         url: '/supplier',
         icon: Icon.ClipboardCheck,
     },
+    {
+        title: 'Laporan',
+        icon: Icon.ClipboardCheck,
+        items: [
+            {
+                title: 'Laporan',
+                url: '/supplier',
+                icon: Icon.ClipboardCheck,
+            },
+        ],
+    },
 ];
+// const mainCollapseNavItems: NavGroup[] = [
+
+// ];
 
 const footerNavItems: NavItem[] = [
     // {
