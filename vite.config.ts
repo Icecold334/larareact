@@ -17,6 +17,14 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    build: {
+        target: 'esnext',
+        rollupOptions: {
+            output: {
+                manualChunks: undefined, // Biarkan Vite menangani chunking
+            },
+        },
+    },
     resolve: {
         extensions: ['.js', '.jsx', '.ts', '.tsx'],
         alias: {

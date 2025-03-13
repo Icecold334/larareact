@@ -13,6 +13,7 @@ createInertiaApp({
         const pages = import.meta.glob('./pages/**/*.{jsx,tsx}');
         const match = pages[`./pages/${name}.jsx`] || pages[`./pages/${name}.tsx`];
         const matchString = match.toString();
+
         // Ekstrak path dari '/pages' sampai '.jsx' atau '.tsx'
         const extractedPath = '.' + matchString.match(/\/pages\/.*?\.(jsx|tsx)/)[0];
         //

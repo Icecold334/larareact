@@ -95,6 +95,13 @@ class SupplierController extends Controller
      */
     public function destroy(Supplier $supplier)
     {
-        //
+        try {
+            $supplier->delete();
+            return Inertia::clearHistory();
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }

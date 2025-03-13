@@ -23,7 +23,7 @@ export default ({ children, breadcrumbs, title, ...props }: AppLayoutProps) => {
                 text: data.text,
                 icon: data.icon,
                 showConfirmButton: false,
-                timer: 2000,
+                timer: 1500,
                 timerProgressBar: true,
             });
         };

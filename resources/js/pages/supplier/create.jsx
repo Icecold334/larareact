@@ -3,10 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { router } from '@inertiajs/react';
+
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
+
+import DispatchAlert from '@/components/dispatch-alert';
 import { z } from 'zod';
+
 const formSchema = z.object({
     id: z.number().int().nullable().optional(),
     nama: z.string().min(2, {
@@ -20,49 +24,34 @@ const formSchema = z.object({
     }),
 });
 
-export default function (supplier) {
-    const form =
-        useForm <
-        z.infer <
-        typeof formSchema >>
-            {
-                resolver: zodResolver(formSchema),
-                defaultValues: {
-                    id: supplier?.id ? Number(supplier.id) : undefined,
-                    nama: supplier?.nama || '',
-                    alamat: supplier?.alamat || '',
-                    telepon: supplier?.telepon || '',
-                },
-            };
-    const showAlert = (status, text) => {
-        const event = new CustomEvent('alert', {
-            detail: {
-                title: status ? 'Berhasil!' : 'Gagal!',
-                icon: status ? 'success' : 'error',
-                text: `Supplier ${status ? 'berhasil' : 'gagal'} di${text}!`,
-                status,
-            },
-        });
-        window.dispatchEvent(event);
-    };
+export default function ({ supplier }) {
+    const form = useForm({
+        resolver: zodResolver(formSchema),
+        defaultValues: {
+            id: supplier?.id ? Number(supplier.id) : undefined,
+            nama: supplier?.nama || '',
+            alamat: supplier?.alamat || '',
+            telepon: supplier?.telepon || '',
+        },
+    });
 
     async function onSubmit(values) {
         if (values.id) {
             router.put(`/supplier/${values.id}`, values, {
                 onSuccess: () => {
-                    showAlert(true, 'diubah');
+                    DispatchAlert({ status: true, obj: 'Supplier', text: 'diubah' });
                 },
                 onError: () => {
-                    showAlert(false, 'diubah');
+                    DispatchAlert({ status: false, obj: 'Supplier', text: 'diubah' });
                 },
             });
         } else {
             router.post('/supplier', values, {
                 onSuccess: () => {
-                    showAlert(true, 'disimpan');
+                    DispatchAlert({ status: true, obj: 'Supplier', text: 'disimpan' });
                 },
                 onError: () => {
-                    showAlert(false, 'disimpan');
+                    DispatchAlert({ status: false, obj: 'Supplier', text: 'disimpan' });
                 },
             });
         }

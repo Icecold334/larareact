@@ -19,18 +19,29 @@ const mainNavItems: (NavItem | NavGroup)[] = [
         icon: Icon.CoinsIcon,
     },
     {
-        title: 'Supplier',
+        title: 'Daftar Supplier',
         url: '/supplier',
         icon: Icon.ClipboardCheck,
     },
     {
+        title: 'Daftar Barang',
+        url: '/barang',
+        icon: Icon.Box,
+    },
+    {
         title: 'Laporan',
-        icon: Icon.ClipboardCheck,
+        icon: Icon.BarChart2,
+        isActive: false,
         items: [
             {
-                title: 'Laporan',
-                url: '/supplier',
-                icon: Icon.ClipboardCheck,
+                title: 'Laporan Pajak',
+                url: '/laporan/pajak',
+                icon: Icon.DollarSign,
+            },
+            {
+                title: 'Laporan Pajak',
+                url: '/laporan/pajak',
+                icon: Icon.DollarSign,
             },
         ],
     },
