@@ -4,7 +4,6 @@ import { type BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import { useEffect, type ReactNode } from 'react';
 import Swal from 'sweetalert2';
-import withReactContent from 'sweetalert2-react-content';
 
 interface AppLayoutProps {
     children: ReactNode;
@@ -13,18 +12,32 @@ interface AppLayoutProps {
 }
 
 export default ({ children, breadcrumbs, title, ...props }: AppLayoutProps) => {
-    const MySwal = withReactContent(Swal);
-
     useEffect(() => {
         const handlePostCreated = (event: Event) => {
             const data = (event as CustomEvent).detail;
-            MySwal.fire({
-                title: data.title,
-                text: data.text,
-                icon: data.icon,
+            // Swal.fire({
+            //     title: data.title,
+            //     text: data.text,
+            //     icon: data.icon,
+            //     showConfirmButton: false,
+            //     timer: 1500,
+            //     timerProgressBar: true,
+            // });
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
                 showConfirmButton: false,
-                timer: 1500,
+                timer: 3000,
                 timerProgressBar: true,
+                didOpen: (toast) => {
+                    toast.onmouseenter = Swal.stopTimer;
+                    toast.onmouseleave = Swal.resumeTimer;
+                },
+            });
+
+            Toast.fire({
+                icon: data.icon,
+                title: data.text,
             });
         };
 

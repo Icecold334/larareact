@@ -58,7 +58,19 @@ class BarangController extends Controller
      */
     public function update(UpdateBarangRequest $request, Barang $barang)
     {
-        //
+        $nama = $request->nama;
+        $harga = $request->harga;
+        try {
+            $barang->update([
+                'nama' => $nama,
+                'harga' => $harga,
+            ]);
+            return Inertia::clearHistory();
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -66,6 +78,13 @@ class BarangController extends Controller
      */
     public function destroy(Barang $barang)
     {
-        //
+        try {
+            $barang->delete();
+            return Inertia::clearHistory();
+        } catch (\Exception $e) {
+            return back()->withErrors([
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 }
