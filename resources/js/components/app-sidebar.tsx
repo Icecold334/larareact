@@ -29,6 +29,11 @@ const mainNavItems: (NavItem | NavGroup)[] = [
         icon: Icon.Box,
     },
     {
+        title: 'Daftar Merk',
+        url: '/merk',
+        icon: Icon.Layers2,
+    },
+    {
         title: 'Laporan',
         icon: Icon.BarChart2,
         isActive: false,

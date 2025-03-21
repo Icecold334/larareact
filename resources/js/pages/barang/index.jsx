@@ -58,7 +58,7 @@ export default function Index() {
     }, []);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs} title="Daftar Supplier">
+        <AppLayout breadcrumbs={breadcrumbs} title="Daftar Barang">
             <DataTable data={tableData} dialogOpen={dialogOpen} setDialogOpen={setDialogOpen} cols={cols} />
         </AppLayout>
     );

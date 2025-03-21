@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\MerkController;
 use App\Http\Controllers\SupplierController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -20,6 +21,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::resource('supplier', SupplierController::class);
     Route::get('/barangs', [BarangController::class, 'fetch']);
     Route::resource('barang', BarangController::class);
+    Route::get('/merks', [MerkController::class, 'fetch']);
+    Route::resource('merk', MerkController::class);
 });
 
 require __DIR__ . '/settings.php';

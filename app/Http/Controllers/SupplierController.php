@@ -95,7 +95,6 @@ class SupplierController extends Controller
      */
     public function destroy(Supplier $supplier)
     {
-        dd($supplier);
         try {
             $supplier->delete();
             return Inertia::clearHistory();
