@@ -11,7 +11,10 @@ export default defineConfig({
             ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),
-        react(),
+        // react(),
+        react({
+            include: [/\.jsx$/, /\.tsx$/], // memproses .jsx dan .tsx sekaligus
+        }),
         tailwindcss(),
     ],
     esbuild: {
