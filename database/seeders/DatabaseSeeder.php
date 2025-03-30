@@ -22,8 +22,8 @@ class DatabaseSeeder extends Seeder
         Barang::factory(5)->create();
         Merk::factory(60)->create();
         User::factory()->create([
-            'name' => 'Uchiha Azril',
-            'email' => 'test@email.com',
+            'name' => 'Berkah Jaya',
+            'email' => 'berkah@email.com',
         ]);
     }
 }
