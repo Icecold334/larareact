@@ -120,6 +120,7 @@ class MerkFactory extends Factory
     public function definition(): array
     {
         return [
+            'uuid' => $this->faker->numerify('BJ###-###-###'),
             'barang_id' => Barang::inRandomOrder()->value('id') ?? Barang::factory(), // Ambil barang yang sudah ada, kalau nggak ada buat baru
             'tipe' => $this->faker->randomElement($this->merks),
             'warna' => $this->faker->safeColorName,

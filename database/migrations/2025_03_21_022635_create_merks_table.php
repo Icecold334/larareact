@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('merks', function (Blueprint $table) {
             $table->id();
+            $table->string('uuid')->unique();
             $table->foreignId('barang_id')->constrained()->onDelete('cascade');
             $table->string('tipe');
             $table->string('warna');
