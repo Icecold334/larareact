@@ -19,6 +19,11 @@ const mainNavItems: (NavItem | NavGroup)[] = [
         icon: Icon.CoinsIcon,
     },
     {
+        title: 'Pembelian',
+        url: '/beli',
+        icon: Icon.ShoppingCart,
+    },
+    {
         title: 'Daftar Supplier',
         url: '/supplier',
         icon: Icon.ClipboardCheck,

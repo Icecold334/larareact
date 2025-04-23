@@ -21,6 +21,13 @@ export default function Index() {
         search: 'nama',
         cols: [
             {
+                col: 'supplier',
+                sortable: true,
+                type: 'text',
+                rupiah: false,
+                min: 3,
+            },
+            {
                 col: 'nama',
                 sortable: true,
                 type: 'text',
@@ -39,8 +46,10 @@ export default function Index() {
     async function fetchData() {
         const response = await fetch('/barangs');
         const data = await response.json();
+
         const newData = data.map((e) => ({
             ...e,
+            supplier: e.supplier.nama,
             harga: e.harga ? String(e.harga) : '', // Jika undefined/null, kosongkan string
         }));
         setTableData(newData);

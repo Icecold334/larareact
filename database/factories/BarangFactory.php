@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -121,6 +122,7 @@ class BarangFactory extends Factory
     {
         return [
             'nama' => $this->faker->randomElement($this->barangs),
+            'supplier_id' => Supplier::inRandomOrder()->value('id') ?? Supplier::factory(),
             'harga' => $this->faker->numberBetween(10, 100) * 1000
         ];
     }

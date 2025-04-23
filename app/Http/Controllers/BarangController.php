@@ -14,7 +14,7 @@ class BarangController extends Controller
      */
     public function fetch($id = 0)
     {
-        return $id > 0 ? Barang::find($id) : Barang::all();
+        return $id > 0 ? Barang::find($id) : Barang::with('merk', 'supplier')->get();
     }
     public function index()
     {

@@ -9,25 +9,31 @@ import { router } from '@inertiajs/react';
 import { useForm } from 'react-hook-form';
 
 import DispatchAlert from '@/components/dispatch-alert';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { z } from 'zod';
 
 export default function ({ obj, cols }) {
     const formSchema = z.object({
         ...cols.cols.reduce((acc, col) => {
-            let schema = z.string();
+            let schema;
 
             if (col.type === 'number') {
-                schema = z.number().int();
-            }
-
-            if (col.min) {
-                schema = schema.min(col.min, {
-                    message: `${col.col.charAt(0).toUpperCase() + col.col.slice(1)} harus minimal ${col.min} karakter.`,
+                schema = z.preprocess((val) => Number(val), z.number().int().min(1, `${col.col} harus lebih dari 0`));
+            } else if (col.type === 'select') {
+                schema = z.string().refine((val) => val !== '0', {
+                    message: `Silakan pilih ${col.col}`,
                 });
+            } else {
+                schema = z.string();
+                if (col.min) {
+                    schema = schema.min(col.min, {
+                        message: `${col.col.charAt(0).toUpperCase() + col.col.slice(1)} harus minimal ${col.min} karakter.`,
+                    });
+                }
             }
 
             schema = schema.nullable().optional();
-
             acc[col.col] = schema;
             return acc;
         }, {}),
@@ -38,7 +44,7 @@ export default function ({ obj, cols }) {
         resolver: zodResolver(formSchema),
         defaultValues: {
             ...cols.cols.reduce((acc, col) => {
-                acc[col.col] = obj?.[col.col] || (col.type === 'text' ? '' : col.type === 'number' ? 0 : null);
+                acc[col.col] = obj?.[col.col] ?? (col.type === 'text' ? '' : col.type === 'number' ? 0 : col.type === 'select' ? '0' : null);
                 return acc;
             }, {}),
             id: obj?.id ?? null,
@@ -46,15 +52,12 @@ export default function ({ obj, cols }) {
     });
 
     async function onSubmit(values) {
-        // Hilangkan format Rp sebelum dikirim ke server
         const formattedValues = {
             ...values,
             ...cols.cols
                 .filter((col) => col.rupiah)
                 .reduce((acc, col) => {
-                    acc[col.col] = values[col.col]
-                        ? Number(values[col.col].replace(/[^\d]/g, '')) // Hapus Rp dan tanda baca
-                        : 0;
+                    acc[col.col] = values[col.col] ? Number(values[col.col].replace(/[^\d]/g, '')) : 0;
                     return acc;
                 }, {}),
         };
@@ -72,10 +75,9 @@ export default function ({ obj, cols }) {
         }
     }
 
-    // Fungsi untuk memformat angka ke format Rupiah
     function formatRupiah(value) {
         if (!value) return '';
-        const numberString = value.replace(/[^\d]/g, ''); // Hapus selain angka
+        const numberString = value.replace(/[^\d]/g, '');
         return new Intl.NumberFormat('id-ID', {
             style: 'currency',
             currency: 'IDR',
@@ -97,20 +99,32 @@ export default function ({ obj, cols }) {
                                 <FormControl>
                                     {col.type === 'textarea' ? (
                                         <Textarea placeholder={`Masukkan ${col.col}`} {...field} autoComplete="off" />
+                                    ) : col.type === 'select' ? (
+                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder={`Pilih ${col.col}`} />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {(col.options || []).map((option) => {
+                                                    return (
+                                                        <SelectItem key={option.id} value={option.id}>
+                                                            {option.nama}
+                                                        </SelectItem>
+                                                    );
+                                                })}
+                                            </SelectContent>
+                                        </Select>
                                     ) : col.rupiah ? (
-                                        // Input dengan format rupiah
                                         <Input
                                             type="text"
                                             placeholder={`Masukkan ${col.col}`}
                                             value={field.value ? formatRupiah(field.value) : ''}
                                             onChange={(e) => {
-                                                // Simpan dalam format tanpa simbol Rp di state
                                                 field.onChange(e.target.value.replace(/[^\d]/g, ''));
                                             }}
                                             autoComplete="off"
                                         />
                                     ) : (
-                                        // Input biasa
                                         <Input
                                             type={col.type === 'number' ? 'number' : 'text'}
                                             placeholder={`Masukkan ${col.col}`}
@@ -119,7 +133,7 @@ export default function ({ obj, cols }) {
                                         />
                                     )}
                                 </FormControl>
-                                <FormMessage />
+                                <FormMessage className="text-red-500" />
                             </FormItem>
                         )}
                     />

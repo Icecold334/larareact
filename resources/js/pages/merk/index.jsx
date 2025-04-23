@@ -1,7 +1,7 @@
 'use client';
 
 import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronDown, MoreHorizontal } from 'lucide-react';
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Plus } from 'lucide-react';
 import * as React from 'react';
 
 import { Button } from '@/components/ui/button';
@@ -16,6 +16,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+
+import Form from '@/components/form';
+import Modal from '@/components/modal';
 
 import AppLayout from '@/layouts/app-layout';
 import { useEffect, useState } from 'react';
@@ -93,7 +96,55 @@ export function DataTable({ tableData }) {
     const [columnFilters, setColumnFilters] = React.useState([]);
     const [columnVisibility, setColumnVisibility] = React.useState({});
     const [rowSelection, setRowSelection] = React.useState({});
+    const [barangData, setBarangData] = useState([]);
+    async function fetchData() {
+        const response = await fetch('/barangs');
+        const data = await response.json();
 
+        const newData = data.map((e) => ({
+            ...e,
+            supplier: e.supplier.nama,
+            harga: e.harga ? String(e.harga) : '', // Jika undefined/null, kosongkan string
+        }));
+        setBarangData(newData);
+    }
+    useEffect(() => {
+        fetchData();
+    }, []);
+
+    const [obj, setObj] = React.useState(null);
+
+    const [cols, setCols] = React.useState({
+        table: 'Supplier',
+        href: 'supplier',
+        copy: 'telepon',
+        search: 'nama',
+        cols: [
+            {
+                col: 'namaBarang',
+                sortable: true,
+                type: 'select',
+                options: barangData,
+                rupiah: false,
+                min: 3,
+            },
+            {
+                col: 'tipe',
+                sortable: true,
+                type: 'text',
+                rupiah: false,
+                min: 3,
+            },
+            {
+                col: 'warna',
+                sortable: true,
+                type: 'text',
+                rupiah: false,
+                min: 3,
+            },
+        ],
+    });
+    const [dialogOpen, setDialogOpen] = React.useState(false);
     const table = useReactTable({
         data: tableData,
         columns,
@@ -115,37 +166,47 @@ export function DataTable({ tableData }) {
 
     return (
         <div className="w-full">
-            <div className="flex items-center py-4">
+            <div className="flex items-center justify-between py-4">
                 <Input
-                    placeholder="Filter emails..."
-                    value={table.getColumn('email')?.getFilterValue() ?? ''}
-                    onChange={(event) => table.getColumn('email')?.setFilterValue(event.target.value)}
+                    placeholder="Cari Tipe"
+                    value={table.getColumn('tipe')?.getFilterValue() ?? ''}
+                    onChange={(event) => table.getColumn('tipe')?.setFilterValue(event.target.value)}
                     className="max-w-sm"
                 />
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="ml-auto">
-                            Columns <ChevronDown />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {table
-                            .getAllColumns()
-                            .filter((column) => column.getCanHide())
-                            .map((column) => {
-                                return (
-                                    <DropdownMenuCheckboxItem
-                                        key={column.id}
-                                        className="capitalize"
-                                        checked={column.getIsVisible()}
-                                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                                    >
-                                        {column.id}
-                                    </DropdownMenuCheckboxItem>
-                                );
-                            })}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-3">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" className="ml-auto">
+                                Tampilkan <ChevronDown />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {table
+                                .getAllColumns()
+                                .filter((column) => column.getCanHide())
+                                .map((column) => {
+                                    return (
+                                        <DropdownMenuCheckboxItem
+                                            key={column.id}
+                                            className="capitalize"
+                                            checked={column.getIsVisible()}
+                                            onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                                        >
+                                            {column.id}
+                                        </DropdownMenuCheckboxItem>
+                                    );
+                                })}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    <Button
+                        onClick={() => {
+                            setDialogOpen(true);
+                        }}
+                    >
+                        <Plus />
+                        Tambah Merk
+                    </Button>
+                </div>
             </div>
             <div className="rounded-md border">
                 <Table>
@@ -194,6 +255,9 @@ export function DataTable({ tableData }) {
                     </Button>
                 </div>
             </div>
+            <Modal open={dialogOpen} setOpen={setDialogOpen} title={'Tambah Merk'}>
+                <Form obj={obj} cols={cols} />
+            </Modal>
         </div>
     );
 }
