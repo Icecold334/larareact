@@ -12,9 +12,9 @@ class SupplierController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function fetch($id = 0)
+    public function fetch($bool = false)
     {
-        return $id > 0 ? Supplier::find($id) : Supplier::all();
+        return $bool ? Supplier::whereHas('barangs')->get() : Supplier::all();
     }
     public function index()
     {

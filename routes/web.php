@@ -18,8 +18,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('kasir', function () {
         return Inertia::render('kasir');
     })->name('kasir');
-    Route::get('/suppliers', [SupplierController::class, 'fetch']);
+    Route::get('beli', function () {
+        return Inertia::render('pembelian/index');
+    })->name('pembelian');
+    Route::get('/suppliers/{true}', [SupplierController::class, 'fetch']);
     Route::resource('supplier', SupplierController::class);
+    Route::get('/barang/{id}', [BarangController::class, 'fetchSupp']);
     Route::get('/barangs', [BarangController::class, 'fetch']);
     Route::resource('barang', BarangController::class);
     Route::get('/merks', [MerkController::class, 'fetch']);

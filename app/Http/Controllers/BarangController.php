@@ -16,6 +16,11 @@ class BarangController extends Controller
     {
         return $id > 0 ? Barang::find($id) : Barang::with('merk', 'supplier')->get();
     }
+    public function fetchSupp($id = 0)
+    {
+        // dd($id);
+        return  Barang::with('merk', 'supplier')->where('supplier_id', $id)->get();
+    }
     public function index()
     {
         return Inertia::render('barang/index');
