@@ -11,9 +11,8 @@ class Barang extends Model
 {
     /** @use HasFactory<\Database\Factories\BarangFactory> */
     use HasFactory;
-    protected $fillable = [
-        'nama',
-        'harga',
+    protected $guarded = [
+        'id',
     ];
 
     public function merk(): HasMany

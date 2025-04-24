@@ -1,12 +1,13 @@
 'use client';
+import DispatchAlert from '@/components/dispatch-alert';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { router } from '@inertiajs/react';
 import { Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
@@ -69,7 +70,7 @@ export default function () {
                 setRows([
                     {
                         id: Date.now(),
-                        barangId: '',
+                        nama: '',
                         tipe: '',
                         warna: '',
                         jumlah: '',
@@ -91,7 +92,7 @@ export default function () {
             ...prev,
             {
                 id: Date.now(),
-                barangId: '',
+                nama: '',
                 tipe: '',
                 warna: '',
                 jumlah: '',
@@ -110,10 +111,35 @@ export default function () {
     };
 
     const handleSubmit = () => {
-        console.log('Kirim ke server:', rows);
+        const data = {
+            supplier_id: selectedSupplier,
+            rows,
+        };
+        // console.log('Kirim ke server:', );
+
+        router.post(`/beli`, data, {
+            onSuccess: () => {
+                DispatchAlert({ status: true, obj: 'Pembelian', text: 'disimpan' });
+                setBarangList([]);
+                setRows([
+                    {
+                        id: Date.now(),
+                        nama: '',
+                        tipe: '',
+                        warna: '',
+                        jumlah: '',
+                        hargaBeli: '',
+                        hargaJual: '',
+                    },
+                ]);
+            },
+            onError: (e) => {
+                DispatchAlert({ status: false, obj: 'Pembelian', text: 'disimpan' });
+            },
+        });
     };
 
-    const isFormValid = rows.every((row) => row.barangId && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli && row.hargaJual);
+    const isFormValid = rows.every((row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli && row.hargaJual);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} title="Pembelian Stok">
@@ -142,7 +168,7 @@ export default function () {
 
                 {selectedSupplier && (
                     <>
-                        <Table className="min-h-40">
+                        <Table className="">
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Nama Barang</TableHead>
@@ -159,44 +185,12 @@ export default function () {
                                     <TableRow key={row.id}>
                                         <TableCell className="relative">
                                             <Input
-                                                value={getBarangName(barangList, row.barangId)}
-                                                onChange={(e) => handleChange(row.id, 'barangId', e.target.value)}
+                                                value={getBarangName(barangList, row.nama)}
+                                                onChange={(e) => handleChange(row.id, 'nama', e.target.value)}
                                                 placeholder="Ketik nama barang"
                                                 onFocus={() => setFocusedRow(row.id)}
                                                 onBlur={() => setTimeout(() => setFocusedRow(null), 200)}
                                             />
-                                            {focusedRow === row.id && row.barangId && (
-                                                <div className="bg-background absolute z-99 mt-1 max-h-40 w-full overflow-auto rounded-md border shadow-md">
-                                                    <Command>
-                                                        <CommandGroup>
-                                                            {barangList
-                                                                .filter((barang) =>
-                                                                    barang.nama
-                                                                        .toLowerCase()
-                                                                        .includes(getBarangName(barangList, row.barangId).toLowerCase()),
-                                                                )
-                                                                .map((barang) => (
-                                                                    <CommandItem
-                                                                        key={barang.id}
-                                                                        value={barang.nama}
-                                                                        onSelect={(value) => {
-                                                                            const selected = barangList.find(
-                                                                                (b) => b.nama.toLowerCase() === value.toLowerCase(),
-                                                                            );
-                                                                            if (selected) {
-                                                                                handleChange(row.id, 'barangId', selected.id);
-                                                                            } else {
-                                                                                handleChange(row.id, 'barangId', value);
-                                                                            }
-                                                                        }}
-                                                                    >
-                                                                        {barang.nama}
-                                                                    </CommandItem>
-                                                                ))}
-                                                        </CommandGroup>
-                                                    </Command>
-                                                </div>
-                                            )}
                                         </TableCell>
                                         <TableCell>
                                             <Input
@@ -235,9 +229,11 @@ export default function () {
                                             />
                                         </TableCell>
                                         <TableCell>
-                                            <Button size="icon" variant="ghost" onClick={() => handleRemove(row.id)}>
-                                                <X className="text-destructive" />
-                                            </Button>
+                                            {rows.length > 1 && (
+                                                <Button size="icon" variant="ghost" onClick={() => handleRemove(row.id)}>
+                                                    <X className="text-destructive" />
+                                                </Button>
+                                            )}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -245,7 +241,7 @@ export default function () {
                         </Table>
 
                         {isFormValid && (
-                            <div className="flex justify-between pt-4">
+                            <div className="flex justify-between">
                                 <Button variant="outline" onClick={handleAddRow}>
                                     <Plus className="mr-2 h-4 w-4" /> Tambah Baris
                                 </Button>

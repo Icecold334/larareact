@@ -44,8 +44,9 @@ export default function Index() {
     const [tableData, setTableData] = useState([]);
     const fetchData = async () => {
         try {
-            const response = await fetch('/suppliers');
+            const response = await fetch('/suppliers/false');
             const data = await response.json();
+            console.log(data);
 
             // Mapping hanya field yang dibutuhkan
             const formattedData = data.map((supplier, i) => ({
