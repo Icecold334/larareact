@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Barang;
+use Illuminate\Support\Str;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -119,11 +120,15 @@ class MerkFactory extends Factory
      */
     public function definition(): array
     {
+        $tipe = $this->faker->randomElement($this->merks);
+        $warna = $this->faker->safeColorName;
         return [
             'uuid' => $this->faker->numerify('BJ###-###-###'),
             'barang_id' => Barang::inRandomOrder()->value('id') ?? Barang::factory(), // Ambil barang yang sudah ada, kalau nggak ada buat baru
-            'tipe' => $this->faker->randomElement($this->merks),
-            'warna' => $this->faker->safeColorName,
+            'tipe' => $tipe,
+            'slug_tipe' => Str::slug($tipe),
+            'warna' => $warna,
+            'slug_warna' => Str::slug($warna),
         ];
     }
 }

@@ -1,5 +1,7 @@
+import DispatchAlert from '@/components/dispatch-alert';
 import { Card } from '@/components/ui/card';
 import AppLayout from '@/layouts/app-layout';
+import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
 
 const breadcrumbs = [
@@ -36,7 +38,7 @@ export function ComboboxDemo({ className, merks, setSelectedItem }) {
                     {value
                         ? (() => {
                               const merk = merks.find((m) => m.id === value);
-                              return merk ? `${merk.uuid} - ${merk.barang.nama} - ${merk.tipe} - ${merk.warna}` : 'Pilih Barang';
+                              return merk ? `${merk.uuid} - ${merk.nama} - ${merk.tipe} - ${merk.warna}` : 'Pilih Barang';
                           })()
                         : 'Pilih Barang'}
                     <ChevronsUpDown className="ml-2 h-4 w-4 opacity-50" />
@@ -59,7 +61,7 @@ export function ComboboxDemo({ className, merks, setSelectedItem }) {
                                     }}
                                 >
                                     <span className="">
-                                        {merk.uuid} - {merk.barang.nama} - {merk.tipe} - {merk.warna}
+                                        {merk.uuid} - {merk.nama} - {merk.tipe} - {merk.warna}
                                     </span>
                                     <Check className={cn('ml-auto', value === merk.id ? 'opacity-100' : 'opacity-0')} />
                                 </CommandItem>
@@ -80,8 +82,8 @@ export function Cart({ setTotal, lists, setLists }) {
             const formattedData = {
                 id: detail.id,
                 uuid: detail.uuid,
-                barang: detail.barang,
-                harga: detail.barang.harga,
+                harga: detail.harga_jual,
+                nama: detail.nama,
                 tipe: detail.tipe,
                 warna: detail.warna,
                 jumlah: 1,
@@ -140,7 +142,7 @@ export function Cart({ setTotal, lists, setLists }) {
                         <TableRow key={item.id}>
                             <TableCell className="font-medium">{i + 1}</TableCell>
                             <TableCell>{item.uuid}</TableCell>
-                            <TableCell>{item.barang.nama}</TableCell>
+                            <TableCell>{item.nama}</TableCell>
                             <TableCell>{item.tipe}</TableCell>
                             <TableCell>{item.warna}</TableCell>
                             <TableCell>{item.jumlah}</TableCell>
@@ -163,20 +165,20 @@ export default function Kasir() {
     const [total, setTotal] = React.useState(0);
     const fetchData = async () => {
         try {
-            const response = await fetch('/merks');
+            const response = await fetch('/barangs');
             const data = await response.json();
 
-            // Mapping hanya field yang dibutuhkan
-            const formattedData = data.map((merk, i) => ({
-                id: merk.id,
-                uuid: merk.uuid,
-                number: i + 1,
-                barang: merk.barang,
-                tipe: merk.tipe,
-                warna: merk.warna,
-            }));
+            // // Mapping hanya field yang dibutuhkan
+            // const formattedData = data.map((barang, i) => ({
+            //     id: barang.id,
+            //     uuid: barang.uuid,
+            //     number: i + 1,
+            //     nama: barang.nama,
+            //     tipe: barang.tipe,
+            //     warna: barang.warna,
+            // }));
 
-            setTableData(formattedData);
+            setTableData(data);
         } catch (error) {
             console.error('Error fetching suppliers:', error);
         } finally {
@@ -215,9 +217,21 @@ export default function Kasir() {
             <Button
                 className={`col-span-12 text-2xl font-semibold lg:col-span-2 ${total > 0 ? '' : 'hidden'}`}
                 onClick={() => {
-                    setSelectedItem(null);
-                    setTotal(0);
-                    setLists([]);
+                    router.post(
+                        `/kasir`,
+                        { lists },
+                        {
+                            onSuccess: () => {
+                                DispatchAlert({ status: true, obj: 'Pembelian', text: 'disimpan' });
+                                setSelectedItem(null);
+                                setTotal(0);
+                                setLists([]);
+                            },
+                            onError: (e) => {
+                                DispatchAlert({ status: false, obj: 'Penjualan', text: 'disimpan' });
+                            },
+                        },
+                    );
                 }}
             >
                 Bayar

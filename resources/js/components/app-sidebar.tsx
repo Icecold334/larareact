@@ -33,25 +33,25 @@ const mainNavItems: (NavItem | NavGroup)[] = [
         url: '/barang',
         icon: Icon.Box,
     },
-    {
-        title: 'Daftar Merk',
-        url: '/merk',
-        icon: Icon.Layers2,
-    },
+    // {
+    //     title: 'Daftar Merk',
+    //     url: '/merk',
+    //     icon: Icon.Layers2,
+    // },
     {
         title: 'Laporan',
         icon: Icon.BarChart2,
         isActive: false,
         items: [
             {
-                title: 'Laporan Pajak',
-                url: '/laporan/pajak',
-                icon: Icon.DollarSign,
+                title: 'Laporan Pembelian',
+                url: '/laporan/beli',
+                icon: Icon.FileDown,
             },
             {
-                title: 'Laporan Pajak',
-                url: '/laporan/pajak',
-                icon: Icon.DollarSign,
+                title: 'Laporan Penjualan',
+                url: '/laporan/jual',
+                icon: Icon.FileUp,
             },
         ],
     },
