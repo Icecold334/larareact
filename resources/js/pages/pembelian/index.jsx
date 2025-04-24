@@ -2,13 +2,14 @@
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Command, CommandGroup, CommandItem } from '@/components/ui/command';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
 import { Plus, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
-// Helper untuk format dan parsing Rupiah
 const formatRupiah = (value) => {
     if (!value) return '';
     return new Intl.NumberFormat('id-ID', {
@@ -20,15 +21,33 @@ const formatRupiah = (value) => {
 
 const parseNumber = (str) => parseInt(str.replace(/[^\d]/g, ''), 10) || 0;
 
+const getBarangName = (barangList, id) => {
+    return barangList.find((b) => b.id === id)?.nama || id || '';
+};
+
+const HargaInput = ({ value, onChange, placeholder }) => (
+    <div className="border-input bg-background focus-within:ring-ring focus-within:border-ring flex h-10 w-full items-center rounded-md border px-3 text-sm shadow-sm focus-within:ring-1">
+        <span className="text-muted-foreground mr-2">Rp</span>
+        <input
+            type="text"
+            inputMode="numeric"
+            className="w-full border-none bg-transparent outline-none focus-visible:ring-0"
+            value={value ? formatRupiah(value).replace(/^Rp\s?/, '') : ''}
+            onChange={(e) => onChange(parseNumber(e.target.value))}
+            placeholder={placeholder}
+        />
+    </div>
+);
+
 const breadcrumbs = [{ title: 'Pembelian', href: '/pembelian' }];
 
-export default function PembelianPage() {
+export default function () {
     const [suppliers, setSuppliers] = useState([]);
     const [selectedSupplier, setSelectedSupplier] = useState(null);
     const [barangList, setBarangList] = useState([]);
     const [rows, setRows] = useState([]);
+    const [focusedRow, setFocusedRow] = useState(null);
 
-    // Ambil supplier
     useEffect(() => {
         const fetchSuppliers = async () => {
             const res = await fetch('/suppliers/true');
@@ -38,18 +57,15 @@ export default function PembelianPage() {
         fetchSuppliers();
     }, []);
 
-    // Dengarkan event supplier
     useEffect(() => {
         const handleSupplierEvent = async ({ detail }) => {
             setSelectedSupplier(detail.id);
-            setRows([]); // reset dulu
+            setRows([]);
 
             try {
                 const res = await fetch(`/barang/${detail.id}`);
                 const data = await res.json();
                 setBarangList(data);
-
-                // Tambah baris pertama otomatis
                 setRows([
                     {
                         id: Date.now(),
@@ -70,7 +86,6 @@ export default function PembelianPage() {
         return () => window.removeEventListener('supplier', handleSupplierEvent);
     }, []);
 
-    // Fungsi bantu
     const handleAddRow = () => {
         setRows((prev) => [
             ...prev,
@@ -96,16 +111,13 @@ export default function PembelianPage() {
 
     const handleSubmit = () => {
         console.log('Kirim ke server:', rows);
-        // fetch('/pembelian', { method: 'POST', body: JSON.stringify(rows) })
     };
 
-    // Validasi: hanya muncul tombol jika semua row lengkap
     const isFormValid = rows.every((row) => row.barangId && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli && row.hargaJual);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} title="Pembelian Stok">
-            <Card className="space-y-6 p-6">
-                {/* Supplier Picker */}
+            <Card className="space-y-6 overflow-visible p-6">
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Pilih Supplier</label>
                     <Select
@@ -128,61 +140,110 @@ export default function PembelianPage() {
                     </Select>
                 </div>
 
-                {/* Tabel Input */}
                 {selectedSupplier && (
-                    <div className="space-y-4">
-                        {/* Header */}
-                        <div className="text-muted-foreground grid grid-cols-7 gap-2 border-b pb-2 text-sm font-semibold">
-                            <div>Nama Barang</div>
-                            <div>Tipe</div>
-                            <div>Warna</div>
-                            <div>Jumlah</div>
-                            <div>Harga Beli</div>
-                            <div>Harga Jual</div>
-                            <div></div>
-                        </div>
+                    <>
+                        <Table className="min-h-40">
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nama Barang</TableHead>
+                                    <TableHead>Tipe</TableHead>
+                                    <TableHead>Warna</TableHead>
+                                    <TableHead>Jumlah</TableHead>
+                                    <TableHead>Harga Beli</TableHead>
+                                    <TableHead>Harga Jual</TableHead>
+                                    <TableHead />
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {rows.map((row) => (
+                                    <TableRow key={row.id}>
+                                        <TableCell className="relative">
+                                            <Input
+                                                value={getBarangName(barangList, row.barangId)}
+                                                onChange={(e) => handleChange(row.id, 'barangId', e.target.value)}
+                                                placeholder="Ketik nama barang"
+                                                onFocus={() => setFocusedRow(row.id)}
+                                                onBlur={() => setTimeout(() => setFocusedRow(null), 200)}
+                                            />
+                                            {focusedRow === row.id && row.barangId && (
+                                                <div className="bg-background absolute z-99 mt-1 max-h-40 w-full overflow-auto rounded-md border shadow-md">
+                                                    <Command>
+                                                        <CommandGroup>
+                                                            {barangList
+                                                                .filter((barang) =>
+                                                                    barang.nama
+                                                                        .toLowerCase()
+                                                                        .includes(getBarangName(barangList, row.barangId).toLowerCase()),
+                                                                )
+                                                                .map((barang) => (
+                                                                    <CommandItem
+                                                                        key={barang.id}
+                                                                        value={barang.nama}
+                                                                        onSelect={(value) => {
+                                                                            const selected = barangList.find(
+                                                                                (b) => b.nama.toLowerCase() === value.toLowerCase(),
+                                                                            );
+                                                                            if (selected) {
+                                                                                handleChange(row.id, 'barangId', selected.id);
+                                                                            } else {
+                                                                                handleChange(row.id, 'barangId', value);
+                                                                            }
+                                                                        }}
+                                                                    >
+                                                                        {barang.nama}
+                                                                    </CommandItem>
+                                                                ))}
+                                                        </CommandGroup>
+                                                    </Command>
+                                                </div>
+                                            )}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                value={row.tipe}
+                                                onChange={(e) => handleChange(row.id, 'tipe', e.target.value)}
+                                                placeholder="Tipe"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                value={row.warna}
+                                                onChange={(e) => handleChange(row.id, 'warna', e.target.value)}
+                                                placeholder="Warna"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                type="number"
+                                                value={row.jumlah}
+                                                onChange={(e) => handleChange(row.id, 'jumlah', e.target.value)}
+                                                placeholder="Jumlah"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <HargaInput
+                                                value={row.hargaBeli}
+                                                onChange={(val) => handleChange(row.id, 'hargaBeli', val)}
+                                                placeholder="Harga Beli"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <HargaInput
+                                                value={row.hargaJual}
+                                                onChange={(val) => handleChange(row.id, 'hargaJual', val)}
+                                                placeholder="Harga Jual"
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Button size="icon" variant="ghost" onClick={() => handleRemove(row.id)}>
+                                                <X className="text-destructive" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
 
-                        {/* Rows */}
-                        {rows.map((row) => (
-                            <div key={row.id} className="grid grid-cols-7 items-center gap-2">
-                                <Select value={row.barangId} onValueChange={(val) => handleChange(row.id, 'barangId', val)}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Pilih Barang" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {barangList.map((barang) => (
-                                            <SelectItem key={barang.id} value={barang.id}>
-                                                {barang.nama}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-
-                                <Input value={row.tipe} onChange={(e) => handleChange(row.id, 'tipe', e.target.value)} placeholder="Tipe" />
-                                <Input value={row.warna} onChange={(e) => handleChange(row.id, 'warna', e.target.value)} placeholder="Warna" />
-                                <Input
-                                    type="number"
-                                    value={row.jumlah}
-                                    onChange={(e) => handleChange(row.id, 'jumlah', e.target.value)}
-                                    placeholder="Jumlah"
-                                />
-                                <Input
-                                    value={formatRupiah(row.hargaBeli)}
-                                    onChange={(e) => handleChange(row.id, 'hargaBeli', parseNumber(e.target.value))}
-                                    placeholder="Harga Beli"
-                                />
-                                <Input
-                                    value={formatRupiah(row.hargaJual)}
-                                    onChange={(e) => handleChange(row.id, 'hargaJual', parseNumber(e.target.value))}
-                                    placeholder="Harga Jual"
-                                />
-                                <Button size="icon" variant="ghost" onClick={() => handleRemove(row.id)}>
-                                    <X className="text-destructive" />
-                                </Button>
-                            </div>
-                        ))}
-
-                        {/* Tombol Tambah Baris & Simpan */}
                         {isFormValid && (
                             <div className="flex justify-between pt-4">
                                 <Button variant="outline" onClick={handleAddRow}>
@@ -193,7 +254,7 @@ export default function PembelianPage() {
                                 </Button>
                             </div>
                         )}
-                    </div>
+                    </>
                 )}
             </Card>
         </AppLayout>
