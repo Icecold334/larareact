@@ -243,8 +243,8 @@ class BarangFactory extends Factory
             'slug_tipe' => Str::slug($tipe),
             'warna' => $warna,
             'slug_warna' => Str::slug($warna),
-            'supplier_id' => Supplier::inRandomOrder()->value('id') ?? Supplier::factory(),
-            'harga_beli' => $hargaBeli,
+            // 'supplier_id' => Supplier::inRandomOrder()->value('id') ?? Supplier::factory(),
+            // 'harga_beli' => $hargaBeli,
             'harga_jual' => $hargaJual,
         ];
     }

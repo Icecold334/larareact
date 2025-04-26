@@ -3,6 +3,7 @@
 namespace Database\Factories;
 
 use App\Models\Barang;
+use App\Models\Supplier;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
@@ -23,6 +24,7 @@ class TransaksiFactory extends Factory
             'kode' => $kode,
             'jenis' => $jenis,
             'barang_id' => Barang::inRandomOrder()->value('id') ?? Barang::factory(),
+            'supplier_id' => Supplier::inRandomOrder()->value('id') ?? Supplier::factory(),
             'jumlah' => fake()->numberBetween(50, 500),
         ];
     }

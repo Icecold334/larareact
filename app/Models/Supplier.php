@@ -17,8 +17,15 @@ class Supplier extends Model
     ];
 
 
-    public function barangs(): HasMany
+    // public function barangs(): HasMany
+    // {
+    //     return $this->hasMany(Barang::class, 'supplier_id');
+    // }
+
+    public function barangs()
     {
-        return $this->hasMany(Barang::class, 'supplier_id');
+        return $this->morphedByMany(Barang::class, 'supplyable', 'supplierables')
+            ->withPivot('harga_beli')
+            ->withTimestamps();
     }
 }

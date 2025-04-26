@@ -7,6 +7,7 @@ use App\Models\Merk;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use App\Models\Supplier;
+use App\Models\Supplierables;
 use App\Models\Transaksi;
 use Illuminate\Database\Seeder;
 
@@ -19,9 +20,10 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
         Supplier::create(['nama' => 'PT. Faiz Ambajaya', 'alamat' => 'Gg. Hitam Legam No. 99, Jomokerto, Jatim', 'telepon' => '086478953157']);
-        Supplier::factory(9)->create();
-        Barang::factory(50)->create();
-        Transaksi::factory(200)->create();
+        Supplier::factory(2)->create();
+        Barang::factory(10)->create();
+        Supplierables::factory(20)->create();
+        Transaksi::factory(5)->create();
         // Merk::factory(60)->create();
         User::factory()->create([
             'name' => 'Berkah Jaya',

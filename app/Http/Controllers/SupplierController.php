@@ -14,7 +14,7 @@ class SupplierController extends Controller
      */
     public function fetch($bool = false)
     {
-        return $bool ? Supplier::whereHas('barangs')->get() : Supplier::all();
+        return $bool ? Supplier::whereHas('barangs')->get() : Supplier::with('barangs')->get();
     }
     public function index()
     {
@@ -26,7 +26,7 @@ class SupplierController extends Controller
      */
     public function create()
     {
-        return Inertia::render('supplier/create');
+        // return Inertia::render('supplier/create');
     }
 
     /**

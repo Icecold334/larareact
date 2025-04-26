@@ -64,7 +64,7 @@ export default function () {
             setRows([]);
 
             try {
-                const res = await fetch(`/barang/${detail.id}`);
+                const res = await fetch(`/barang/supp/${detail.id}`);
                 const data = await res.json();
                 setBarangList(data);
                 setRows([
@@ -75,7 +75,6 @@ export default function () {
                         warna: '',
                         jumlah: '',
                         hargaBeli: '',
-                        hargaJual: '',
                     },
                 ]);
             } catch (err) {
@@ -97,7 +96,6 @@ export default function () {
                 warna: '',
                 jumlah: '',
                 hargaBeli: '',
-                hargaJual: '',
             },
         ]);
     };
@@ -129,7 +127,6 @@ export default function () {
                         warna: '',
                         jumlah: '',
                         hargaBeli: '',
-                        hargaJual: '',
                     },
                 ]);
             },
@@ -139,7 +136,7 @@ export default function () {
         });
     };
 
-    const isFormValid = rows.every((row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli && row.hargaJual);
+    const isFormValid = rows.every((row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} title="Pembelian Stok">
@@ -176,7 +173,7 @@ export default function () {
                                     <TableHead>Warna</TableHead>
                                     <TableHead>Jumlah</TableHead>
                                     <TableHead>Harga Beli</TableHead>
-                                    <TableHead>Harga Jual</TableHead>
+                                    {/* <TableHead>Harga Jual</TableHead> */}
                                     <TableHead />
                                 </TableRow>
                             </TableHeader>
@@ -221,13 +218,13 @@ export default function () {
                                                 placeholder="Harga Beli"
                                             />
                                         </TableCell>
-                                        <TableCell>
+                                        {/* <TableCell>
                                             <HargaInput
                                                 value={row.hargaJual}
                                                 onChange={(val) => handleChange(row.id, 'hargaJual', val)}
                                                 placeholder="Harga Jual"
                                             />
-                                        </TableCell>
+                                        </TableCell> */}
                                         <TableCell>
                                             {rows.length > 1 && (
                                                 <Button size="icon" variant="ghost" onClick={() => handleRemove(row.id)}>

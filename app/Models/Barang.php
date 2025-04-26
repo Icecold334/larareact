@@ -20,8 +20,15 @@ class Barang extends Model
         return $this->hasMany(Merk::class, 'barang_id');
     }
 
-    public function supplier(): BelongsTo
+    // public function supplier(): BelongsTo
+    // {
+    //     return $this->belongsTo(Supplier::class, 'supplier_id');
+    // }
+
+    public function suppliers()
     {
-        return $this->belongsTo(Supplier::class, 'supplier_id');
+        return $this->morphToMany(Supplier::class, 'supplyable', 'supplierables')
+            ->withPivot('harga_beli')
+            ->withTimestamps();
     }
 }

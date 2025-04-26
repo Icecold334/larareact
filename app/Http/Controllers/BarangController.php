@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Inertia\Inertia;
 use App\Models\Barang;
+use App\Models\Transaksi;
+use Illuminate\Support\Str;
 use App\Http\Requests\StoreBarangRequest;
 use App\Http\Requests\UpdateBarangRequest;
-use Inertia\Inertia;
 
 class BarangController extends Controller
 {
@@ -14,7 +16,24 @@ class BarangController extends Controller
      */
     public function fetch($id = 0)
     {
-        return $id > 0 ? Barang::find($id) : Barang::with('merk', 'supplier')->get();
+
+        return $id > 0 ? Barang::find($id) : Barang::whereHas('suppliers')->with('suppliers')->get()->map(function ($barang) {
+            $in = Transaksi::where('barang_id', $barang->id)->where('jenis', true)->sum('jumlah');
+            $out = Transaksi::where('barang_id', $barang->id)->where('jenis', false)->sum('jumlah');
+
+            $barang->stok = max(0, $in - $out);
+            return $barang;
+        });
+    }
+    public function kasir()
+    {
+
+        return  Barang::whereHas('suppliers')->with('suppliers')->get()->map(function ($barang) {
+            $in = Transaksi::where('barang_id', $barang->id)->where('jenis', true)->sum('jumlah');
+            $out = Transaksi::where('barang_id', $barang->id)->where('jenis', false)->sum('jumlah');
+            $barang->stok = max(0, $in - $out);
+            return $barang;
+        })->filter(fn($barang) => $barang->stok > 0 && $barang->harga_jual > 0)->values();
     }
     public function fetchSupp($id = 0)
     {
@@ -47,8 +66,25 @@ class BarangController extends Controller
      */
     public function show(Barang $barang)
     {
-        //
+        $barang->load('suppliers');
+
+        foreach ($barang->suppliers as $supplier) {
+            $in = Transaksi::where('barang_id', $barang->id)
+                ->where('supplier_id', $supplier->id)
+                ->where('jenis', true)
+                ->sum('jumlah');
+
+            $out = Transaksi::where('barang_id', $barang->id)
+                ->where('supplier_id', $supplier->id)
+                ->where('jenis', false)
+                ->sum('jumlah');
+
+            $supplier->stok = max(0, $in - $out);
+        }
+
+        return Inertia::render('barang/show', compact('barang'));
     }
+
 
     /**
      * Show the form for editing the specified resource.
@@ -64,12 +100,21 @@ class BarangController extends Controller
     public function update(UpdateBarangRequest $request, Barang $barang)
     {
         $nama = $request->nama;
-        $harga = $request->harga;
+        $tipe = $request->tipe;
+        $warna = $request->warna;
+        $harga = $request->harga_jual; // pastikan input harga_jual
+
         try {
             $barang->update([
                 'nama' => $nama,
-                'harga' => $harga,
+                'slug' => Str::slug($nama),
+                'tipe' => $tipe,
+                'slug_tipe' => Str::slug($tipe),
+                'warna' => $warna,
+                'slug_warna' => Str::slug($warna),
+                'harga_jual' => $harga,
             ]);
+
             return Inertia::clearHistory();
         } catch (\Exception $e) {
             return back()->withErrors([

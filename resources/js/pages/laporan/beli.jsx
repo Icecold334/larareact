@@ -1,21 +1,18 @@
 'use client';
 
+import { Head } from '@inertiajs/react';
 import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import { ArrowUpDown, ChevronDown } from 'lucide-react';
+import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { ArrowUpDown, ChevronDown, Eye } from 'lucide-react';
 
 import AppLayout from '@/layouts/app-layout';
-import { Head } from '@inertiajs/react';
-import { useEffect, useState } from 'react';
 
-import { Link } from '@inertiajs/react'; // kalo kamu pakai Inertia.js
-import { Eye } from 'lucide-react';
-
-export const columns = [
+const columns = [
     {
         accessorKey: 'kode',
         header: ({ column }) => (
@@ -35,7 +32,7 @@ export const columns = [
             </Button>
         ),
         cell: ({ row }) => {
-            const supplierName = row.original.barangs?.supplier?.nama || '-';
+            const supplierName = row.original.supplier?.nama || '-';
             return <div className="capitalize">{supplierName}</div>;
         },
     },
@@ -57,13 +54,18 @@ export const columns = [
         enableHiding: false,
         header: () => <div className="text-center">Aksi</div>,
         cell: ({ row }) => {
-            const id = row.original.id;
+            const kode = row.original.kode;
             return (
                 <div className="text-center">
-                    <Link href={`/laporan/beli/${id}`} className="inline-flex items-center text-sm text-blue-600 hover:underline">
-                        <Eye className="mr-1 h-4 w-4" />
-                        Lihat
-                    </Link>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => {
+                            window.location.href = `/laporan/detail/${kode}`;
+                        }}
+                    >
+                        <Eye className="h-4 w-4" />
+                    </Button>
                 </div>
             );
         },
@@ -75,22 +77,6 @@ export function DataTable({ tableData }) {
     const [columnFilters, setColumnFilters] = useState([]);
     const [columnVisibility, setColumnVisibility] = useState({});
     const [rowSelection, setRowSelection] = useState([]);
-    const [barangData, setBarangData] = useState([]);
-
-    async function fetchData() {
-        const response = await fetch('/barangs');
-        const data = await response.json();
-        const newData = data.map((e) => ({
-            ...e,
-            supplier: e.supplier.nama,
-            harga: e.harga ? String(e.harga) : '',
-        }));
-        setBarangData(newData);
-    }
-
-    useEffect(() => {
-        fetchData();
-    }, []);
 
     const table = useReactTable({
         data: tableData,
@@ -144,6 +130,7 @@ export function DataTable({ tableData }) {
                     </DropdownMenuContent>
                 </DropdownMenu>
             </div>
+
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
@@ -169,17 +156,16 @@ export function DataTable({ tableData }) {
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No results.
+                                    Tidak ada data.
                                 </TableCell>
                             </TableRow>
                         )}
                     </TableBody>
                 </Table>
             </div>
+
             <div className="flex items-center justify-end space-x-2 py-4">
-                <div className="text-muted-foreground flex-1 text-sm">
-                    {table.getFilteredSelectedRowModel().rows.length} of {table.getFilteredRowModel().rows.length} row(s) selected.
-                </div>
+                <div className="text-muted-foreground flex-1 text-sm">Menampilkan {table.getFilteredRowModel().rows.length} data.</div>
                 <div className="space-x-2">
                     <Button variant="outline" size="sm" onClick={() => table.previousPage()} disabled={!table.getCanPreviousPage()}>
                         Previous
@@ -206,7 +192,9 @@ export default function Page() {
     async function fetchData() {
         const response = await fetch('/laporan/fetch/beli');
         const data = await response.json();
-        setTableData(data);
+        const parsedData = Object.values(data); // <- ini penting!
+
+        setTableData(parsedData);
     }
 
     useEffect(() => {

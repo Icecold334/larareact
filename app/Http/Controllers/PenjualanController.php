@@ -32,23 +32,61 @@ class PenjualanController extends Controller
      */
     public function store(Request $request)
     {
-
         $kode = 'OUT' . fake()->numerify('-###-###-###');
+
         $jenis = false;
+
         try {
             foreach ($request->lists as $key => $val) {
                 $item = collect($val);
-                $barang = Barang::find($item['id']);
+                $barang = Barang::findOrFail($item['id']);
+                $jumlahPenjualan = $item['jumlah']; // jumlah yang mau dijual
 
-                Transaksi::create(
-                    [
-                        'kode' => $kode,
-                        'jenis' => $jenis,
-                        'barang_id' => $barang->id,
-                        'jumlah' => $item['jumlah'],
-                    ]
-                );
+                // Ambil semua supplier untuk barang ini
+                $suppliers = $barang->suppliers()->get()->map(function ($supplier) use ($barang) {
+                    $in = Transaksi::where('barang_id', $barang->id)
+                        ->where('supplier_id', $supplier->id)
+                        ->where('jenis', true)
+                        ->sum('jumlah');
+
+                    $out = Transaksi::where('barang_id', $barang->id)
+                        ->where('supplier_id', $supplier->id)
+                        ->where('jenis', false)
+                        ->sum('jumlah');
+
+                    $supplier->stok = max(0, $in - $out);
+                    return $supplier;
+                })->filter(fn($supplier) => $supplier->stok > 0)->sortByDesc('stok')->values();
+                // dd($suppliers);
+                foreach ($suppliers as $supplier) {
+                    if ($jumlahPenjualan <= 0) {
+                        break; // Kalau sudah cukup, stop
+                    }
+
+                    $ambil = min($jumlahPenjualan, $supplier->stok);
+
+                    if ($ambil > 0) {
+                        // Buat transaksi keluarnya
+                        Transaksi::create([
+                            'kode' => $kode,
+                            'jenis' => $jenis,
+                            'barang_id' => $barang->id,
+                            'supplier_id' => $supplier->id,
+                            'jumlah' => $ambil,
+                        ]);
+
+                        $jumlahPenjualan -= $ambil;
+                    }
+                }
+
+                // Kalau semua supplier ga cukup stok, boleh kasih error/optional
+                if ($jumlahPenjualan > 0) {
+                    return back()->withErrors([
+                        'error' => "Stok tidak cukup untuk barang {$barang->nama}. Kurang {$jumlahPenjualan} pcs.",
+                    ]);
+                }
             }
+
             return Inertia::clearHistory();
         } catch (\Exception $e) {
             return back()->withErrors([
@@ -56,6 +94,7 @@ class PenjualanController extends Controller
             ]);
         }
     }
+
 
     /**
      * Display the specified resource.

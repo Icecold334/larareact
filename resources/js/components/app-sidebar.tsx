@@ -29,7 +29,7 @@ const mainNavItems: (NavItem | NavGroup)[] = [
         icon: Icon.ClipboardCheck,
     },
     {
-        title: 'Daftar Barang',
+        title: 'Stok',
         url: '/barang',
         icon: Icon.Box,
     },

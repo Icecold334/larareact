@@ -33,40 +33,44 @@ class PembelianController extends Controller
     public function store(Request $request)
     {
         $supplier_id = $request->supplier_id;
-
         $kode = 'IN' . fake()->numerify('-###-###-###');
         $jenis = true;
+
         try {
-            foreach ($request->rows as $key => $val) {
+            foreach ($request->rows as $val) {
                 $item = collect($val);
-                // dd(Str::slug($item['nama']), Str::slug($item['tipe']), Str::slug($item['warna']), $item['hargaBeli'], $item['hargaJual'], $supplier_id);
+
+                // Cari atau buat barang berdasarkan slug (tanpa supplier_id)
                 $barang = Barang::firstOrCreate(
                     [
-                        'supplier_id' => $supplier_id,
                         'slug' => Str::slug($item['nama']),
                         'slug_tipe' => Str::slug($item['tipe']),
                         'slug_warna' => Str::slug($item['warna']),
-                        'harga_beli' => $item['hargaBeli'],
-                        'harga_jual' => $item['hargaJual'],
                     ],
                     [
                         'uuid' => 'BJ' . fake()->numerify('-###-###-###'),
                         'nama' => $item['nama'],
                         'tipe' => $item['tipe'],
                         'warna' => $item['warna'],
-
+                        'harga_jual' => 0, // Harga jual belum ditentukan, bisa dari UI nanti
                     ]
                 );
 
-                Transaksi::create(
-                    [
-                        'kode' => $kode,
-                        'jenis' => $jenis,
-                        'barang_id' => $barang->id,
-                        'jumlah' => $item['jumlah'],
-                    ]
-                );
+                // Tambahkan relasi barang <-> supplier di pivot
+                $barang->suppliers()->syncWithoutDetaching([
+                    $supplier_id => ['harga_beli' => $item['hargaBeli']],
+                ]);
+
+                // Buat transaksi masuk
+                Transaksi::create([
+                    'kode' => $kode,
+                    'jenis' => $jenis,
+                    'barang_id' => $barang->id,
+                    'supplier_id' => $supplier_id,
+                    'jumlah' => $item['jumlah'],
+                ]);
             }
+
             return Inertia::clearHistory();
         } catch (\Exception $e) {
             return back()->withErrors([
