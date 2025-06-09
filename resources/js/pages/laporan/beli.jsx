@@ -1,6 +1,6 @@
 'use client';
 
-import { Head } from '@inertiajs/react';
+import { Head, Link } from '@inertiajs/react';
 import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
 import { useEffect, useState } from 'react';
 
@@ -57,15 +57,9 @@ const columns = [
             const kode = row.original.kode;
             return (
                 <div className="text-center">
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                            window.location.href = `/laporan/detail/${kode}`;
-                        }}
-                    >
+                    <Link href={`/laporan/detail/${kode}`} prefetch>
                         <Eye className="h-4 w-4" />
-                    </Button>
+                    </Link>
                 </div>
             );
         },

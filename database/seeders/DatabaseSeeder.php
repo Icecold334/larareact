@@ -2,13 +2,14 @@
 
 namespace Database\Seeders;
 
-use App\Models\Barang;
+use App\Models\Kas;
 use App\Models\Merk;
 use App\Models\User;
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Barang;
 use App\Models\Supplier;
-use App\Models\Supplierables;
 use App\Models\Transaksi;
+use App\Models\Supplierables;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -24,7 +25,7 @@ class DatabaseSeeder extends Seeder
         Barang::factory(10)->create();
         Supplierables::factory(20)->create();
         Transaksi::factory(5)->create();
-        // Merk::factory(60)->create();
+        Kas::factory(5)->create();
         User::factory()->create([
             'name' => 'Berkah Jaya',
             'email' => 'berkah@email.com',

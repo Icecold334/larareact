@@ -28,6 +28,7 @@ class LaporanController extends Controller
         return response()->json($transactions);
     }
 
+
     public function show($kode)
     {
         $transaksi = Transaksi::with('barang', 'supplier', 'barang.suppliers', 'supplier.barangs')->where('kode', $kode)->get();

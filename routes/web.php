@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\KasController;
 use App\Http\Controllers\Laporan;
 use App\Http\Controllers\LaporanController;
 use App\Http\Controllers\MerkController;
@@ -19,6 +20,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
+    Route::get('/kas', [KasController::class, 'arus']);
+    Route::post('/kas', [KasController::class, 'saveKas']);
     Route::get('/laporan/history/{barang}/{supplier}', [LaporanController::class, 'supplierHistory'])->name('laporan.fetch');
     Route::get('/laporan/detail/{uuid}', [LaporanController::class, 'show'])->name('laporan.show.uuid');
     Route::get('/laporan/fetch/{type}', [LaporanController::class, 'fetch'])->name('laporan.fetch');

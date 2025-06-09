@@ -14,7 +14,12 @@ const mainNavItems: (NavItem | NavGroup)[] = [
         icon: Icon.LayoutGrid,
     },
     {
-        title: 'Transaksi',
+        title: 'Arus Kas',
+        url: '/kas',
+        icon: Icon.DollarSign,
+    },
+    {
+        title: 'Penjualan',
         url: '/kasir',
         icon: Icon.CoinsIcon,
     },
