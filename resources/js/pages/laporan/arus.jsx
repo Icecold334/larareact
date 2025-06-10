@@ -1,15 +1,15 @@
 'use client';
 
-import { Head, useForm } from '@inertiajs/react';
-import { useState } from 'react';
-
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Textarea } from '@/components/ui/textarea';
 import AppLayout from '@/layouts/app-layout';
+import { Head, useForm } from '@inertiajs/react';
+import { useState } from 'react';
 
 function formatRupiah(value) {
     if (!value) return '';
@@ -141,7 +141,13 @@ export default function ArusKasPage({ kas = [], saldo = 0 }) {
                                 <Label className="mb-2" htmlFor="keterangan">
                                     Keterangan
                                 </Label>
-                                <Input value={data.keterangan} onChange={(e) => setData('keterangan', e.target.value)} />
+                                <Textarea
+                                    id="keterangan"
+                                    value={data.keterangan}
+                                    onChange={(e) => setData('keterangan', e.target.value)}
+                                    placeholder="Tulis keterangan transaksi di sini..."
+                                    rows={3}
+                                />
                             </div>
 
                             <Button type="submit" className="w-full">

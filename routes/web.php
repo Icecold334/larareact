@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\BarangController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KasController;
 use App\Http\Controllers\Laporan;
 use App\Http\Controllers\LaporanController;
@@ -17,9 +18,8 @@ Route::get('/', function () {
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('dashboard', function () {
-        return Inertia::render('dashboard');
-    })->name('dashboard');
+
+    Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/kas', [KasController::class, 'arus']);
     Route::post('/kas', [KasController::class, 'saveKas']);
     Route::get('/laporan/history/{barang}/{supplier}', [LaporanController::class, 'supplierHistory'])->name('laporan.fetch');
