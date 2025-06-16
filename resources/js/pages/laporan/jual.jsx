@@ -17,6 +17,93 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 import { Calendar } from '@/components/ui/calendar';
+import { getMonth, getYear } from 'date-fns';
+
+function DynamicDatePicker({ type, selectedDate, onSelect }) {
+    if (type === 'harian') {
+        return <Calendar mode="single" selected={selectedDate} onSelect={onSelect} initialFocus />;
+    }
+
+    if (type === 'bulanan') {
+        const months = Array.from({ length: 12 }, (_, i) => i); // 0–11
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
+
+        return (
+            <div className="flex flex-col gap-2 p-4">
+                <Select
+                    value={selectedDate ? String(getMonth(selectedDate)) : ''}
+                    onValueChange={(month) => {
+                        const newDate = selectedDate
+                            ? new Date(getYear(selectedDate), Number(month), 1)
+                            : new Date(new Date().getFullYear(), Number(month), 1);
+                        onSelect(newDate);
+                    }}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Pilih Bulan" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {months.map((month) => (
+                            <SelectItem key={month} value={String(month)}>
+                                {format(new Date(0, month), 'MMMM')}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+
+                <Select
+                    value={selectedDate ? String(getYear(selectedDate)) : ''}
+                    onValueChange={(year) => {
+                        const newDate = selectedDate ? new Date(Number(year), getMonth(selectedDate), 1) : new Date(Number(year), 0, 1);
+                        onSelect(newDate);
+                    }}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Pilih Tahun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {years.map((year) => (
+                            <SelectItem key={year} value={String(year)}>
+                                {year}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        );
+    }
+
+    if (type === 'tahunan') {
+        const currentYear = new Date().getFullYear();
+        const years = Array.from({ length: 20 }, (_, i) => currentYear - i);
+
+        return (
+            <div className="p-4">
+                <Select
+                    value={selectedDate ? String(getYear(selectedDate)) : ''}
+                    onValueChange={(year) => {
+                        const newDate = new Date(Number(year), 0, 1);
+                        onSelect(newDate);
+                    }}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Pilih Tahun" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {years.map((year) => (
+                            <SelectItem key={year} value={String(year)}>
+                                {year}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        );
+    }
+
+    return null;
+}
 
 const columns = [
     {
@@ -80,18 +167,31 @@ const columns = [
 ];
 
 export function DataTable({ rawData }) {
-    const [filterTanggal, setFilterTanggal] = useState(null);
     const [filterPajak, setFilterPajak] = useState('semua');
+    const [filterTanggalType, setFilterTanggalType] = useState('harian');
+    const [filterTanggal, setFilterTanggal] = useState(null);
 
     const filteredData = useMemo(() => {
         return rawData.filter((item) => {
-            const tanggalMatch = filterTanggal ? format(new Date(item.created_at), 'yyyy-MM-dd') === format(filterTanggal, 'yyyy-MM-dd') : true;
+            const itemDate = new Date(item.created_at);
+            const selectedDate = filterTanggal;
+
+            let tanggalMatch = true;
+            if (selectedDate) {
+                if (filterTanggalType === 'harian') {
+                    tanggalMatch = format(itemDate, 'yyyy-MM-dd') === format(selectedDate, 'yyyy-MM-dd');
+                } else if (filterTanggalType === 'bulanan') {
+                    tanggalMatch = format(itemDate, 'yyyy-MM') === format(selectedDate, 'yyyy-MM');
+                } else if (filterTanggalType === 'tahunan') {
+                    tanggalMatch = format(itemDate, 'yyyy') === format(selectedDate, 'yyyy');
+                }
+            }
 
             const pajakMatch = filterPajak === 'semua' ? true : filterPajak === 'ya' ? item.menggunakan_pajak : !item.menggunakan_pajak;
 
             return tanggalMatch && pajakMatch;
         });
-    }, [rawData, filterTanggal, filterPajak]);
+    }, [rawData, filterTanggal, filterTanggalType, filterPajak]);
 
     const [sorting, setSorting] = useState([]);
     const [columnFilters, setColumnFilters] = useState([]);
@@ -123,14 +223,31 @@ export function DataTable({ rawData }) {
                 <div className="flex flex-wrap gap-4">
                     {/* Tanggal */}
                     <div className="flex items-center gap-2">
+                        <Select value={filterTanggalType} onValueChange={setFilterTanggalType}>
+                            <SelectTrigger className="w-[120px]">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="harian">Harian</SelectItem>
+                                <SelectItem value="bulanan">Bulanan</SelectItem>
+                                <SelectItem value="tahunan">Tahunan</SelectItem>
+                            </SelectContent>
+                        </Select>
+
                         <Popover>
                             <PopoverTrigger asChild>
                                 <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
-                                    {filterTanggal ? format(filterTanggal, 'dd/MM/yyyy') : 'Pilih Tanggal'}
+                                    {filterTanggal
+                                        ? filterTanggalType === 'harian'
+                                            ? format(filterTanggal, 'dd/MM/yyyy')
+                                            : filterTanggalType === 'bulanan'
+                                              ? format(filterTanggal, 'MMMM yyyy')
+                                              : format(filterTanggal, 'yyyy')
+                                        : 'Pilih Tanggal'}
                                 </Button>
                             </PopoverTrigger>
                             <PopoverContent className="w-auto p-0">
-                                <Calendar mode="single" selected={filterTanggal} onSelect={setFilterTanggal} initialFocus />
+                                <DynamicDatePicker type={filterTanggalType} selectedDate={filterTanggal} onSelect={setFilterTanggal} />
                             </PopoverContent>
                         </Popover>
 

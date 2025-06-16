@@ -42,7 +42,7 @@ const breadcrumbs = [{ title: 'Pembelian', href: '/pembelian' }];
 
 export default function PembelianPage() {
     const [suppliers, setSuppliers] = useState([]);
-    const [selectedSupplier, setSelectedSupplier] = useState(null);
+    const [selectedSupplier, setSelectedSupplier] = useState('');
     const [barangList, setBarangList] = useState([]);
     const [rows, setRows] = useState([]);
     const [focusedRow, setFocusedRow] = useState(null);
@@ -126,19 +126,20 @@ export default function PembelianPage() {
                         warna: '',
                         jumlah: '',
                         hargaBeli: '',
-                        hargaJual: '', // ← tambah ini
                         pajakPersen: '',
                     },
                 ]);
             },
-            onError: () => {
+            onError: ({ error }) => {
+                console.log(error);
+
                 DispatchAlert({ status: false, obj: 'Pembelian', text: 'disimpan' });
             },
         });
     };
 
     const isFormValid = rows.every(
-        (row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli && row.hargaJual && row.pajakPersen !== '',
+        (row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli && row.pajakPersen !== '',
     );
 
     return (
@@ -152,7 +153,7 @@ export default function PembelianPage() {
                             const selected = suppliers.find((s) => s.id.toString() === val);
                             const event = new CustomEvent('supplier', { detail: selected });
                             window.dispatchEvent(event);
-                            setSelectedSupplier(selected.id);
+                            setSelectedSupplier(val); // ← Langsung pakai val string
                         }}
                     >
                         <SelectTrigger>
@@ -178,7 +179,6 @@ export default function PembelianPage() {
                                     <TableHead>Warna</TableHead>
                                     <TableHead>Jumlah</TableHead>
                                     <TableHead>Harga Beli</TableHead>
-                                    <TableHead>Harga Jual</TableHead>
                                     <TableHead>Pajak (%)</TableHead>
                                     <TableHead />
                                 </TableRow>
@@ -222,13 +222,6 @@ export default function PembelianPage() {
                                                 value={row.hargaBeli}
                                                 onChange={(val) => handleChange(row.id, 'hargaBeli', val)}
                                                 placeholder="Harga Beli"
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <HargaInput
-                                                value={row.hargaJual}
-                                                onChange={(val) => handleChange(row.id, 'hargaJual', val)}
-                                                placeholder="Harga Jual"
                                             />
                                         </TableCell>
                                         <TableCell>

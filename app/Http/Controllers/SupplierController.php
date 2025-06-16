@@ -14,7 +14,7 @@ class SupplierController extends Controller
      */
     public function fetch($bool = false)
     {
-        return $bool ? Supplier::whereHas('barangs')->get() : Supplier::with('barangs')->get();
+        return $bool ? Supplier::all() : Supplier::with('barangs')->get();
     }
     public function index()
     {
@@ -37,13 +37,13 @@ class SupplierController extends Controller
         $nama = $request->nama;
         $alamat = $request->alamat;
         $telepon = $request->telepon;
-
         try {
-            Supplier::create([
+            $data =  Supplier::create([
                 'nama' => $nama,
                 'alamat' => $alamat,
                 'telepon' => $telepon
             ]);
+            dd($data);
             return Inertia::clearHistory();
         } catch (\Exception $e) {
             return back()->withErrors([

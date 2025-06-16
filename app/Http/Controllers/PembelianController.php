@@ -40,7 +40,11 @@ class PembelianController extends Controller
             foreach ($request->rows as $val) {
                 $item = collect($val);
 
-                // Cari atau buat barang berdasarkan slug (tanpa supplier_id)
+                // Hitung harga jual (harga beli + 2%)
+                $hargaBeli = (int) $item['hargaBeli'];
+                $hargaJualBaru = $hargaBeli + ($hargaBeli * 0.02);
+
+                // Cari atau buat barang berdasarkan kombinasi nama + tipe + warna
                 $barang = Barang::firstOrCreate(
                     [
                         'slug' => Str::slug($item['nama']),
@@ -52,26 +56,26 @@ class PembelianController extends Controller
                         'nama' => $item['nama'],
                         'tipe' => $item['tipe'],
                         'warna' => $item['warna'],
-                        'harga_jual' => $item['hargaJual'] ?? 0,
+                        'harga_jual' => $hargaJualBaru, // harga jual awal
                     ]
                 );
 
-                if (
-                    isset($item['hargaJual']) &&
-                    (int) $item['hargaJual'] > (int) $barang->harga_jual
-                ) {
-                    $barang->update(['harga_jual' => $item['hargaJual']]);
+                // Jika harga jual baru lebih tinggi dari harga lama, update
+                if ($hargaJualBaru > (int) $barang->harga_jual) {
+                    $barang->update([
+                        'harga_jual' => $hargaJualBaru,
+                    ]);
                 }
 
-                // Tambahkan relasi barang <-> supplier di pivot
+                // Tambahkan ke pivot supplierables
                 $barang->suppliers()->syncWithoutDetaching([
                     $supplier_id => [
-                        'harga_beli' => $item['hargaBeli'],
-                        'harga_jual' => $item['hargaJual'] ?? 0,
+                        'harga_beli' => $hargaBeli,
+                        'harga_jual' => $hargaJualBaru, // ← Tambahkan ini
                     ],
                 ]);
 
-                // Buat transaksi masuk
+                // Simpan transaksi pembelian
                 Transaksi::create([
                     'kode' => $kode,
                     'jenis' => $jenis,
@@ -82,7 +86,7 @@ class PembelianController extends Controller
                 ]);
             }
 
-            return Inertia::clearHistory();
+            return Inertia::clearHistory(); // redirect atau response sukses
         } catch (\Exception $e) {
             return back()->withErrors([
                 'error' => $e->getMessage(),
