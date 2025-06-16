@@ -273,6 +273,9 @@ export default function Kasir() {
                                 setSelectedItem(null);
                                 setTotal(0);
                                 setLists([]);
+
+                                // 🔄 Tambahkan ini agar data stok diperbarui
+                                fetchData();
                             },
                             onError: () => {
                                 DispatchAlert({ status: false, obj: 'Penjualan', text: 'disimpan' });

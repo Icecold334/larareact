@@ -46,7 +46,7 @@ const columns = [
         ),
         cell: ({ row }) => {
             const date = new Date(row.getValue('created_at'));
-            return <div>{date.toLocaleDateString('id-ID')}</div>;
+            return <div>{date.toLocaleString('id-ID')}</div>; // ← tampilkan jam juga
         },
     },
     {

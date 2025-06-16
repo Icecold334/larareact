@@ -16,6 +16,9 @@ export default function ShowTransaksi() {
     const transaksi = transaksiList[0];
     const isPembelian = transaksi.jenis === 1;
 
+    // Cek apakah penjualan ini ada pajak
+    const isPakaiPajak = !isPembelian && transaksiList.some((trx) => parseFloat(trx.pajak_persen) > 0);
+
     const subtotal = transaksiList.reduce((acc, trx) => {
         const hargaBeli = trx.supplier?.barangs?.find((b) => b.id === trx.barang_id)?.pivot?.harga_beli;
         const harga = isPembelian ? (hargaBeli ?? trx.barang.harga_jual) : trx.barang.harga_jual;
@@ -27,8 +30,14 @@ export default function ShowTransaksi() {
     return (
         <AppLayout
             breadcrumbs={[
-                { title: isPembelian ? 'Laporan Pembelian' : 'Laporan Penjualan', href: isPembelian ? '/laporan/beli' : '/laporan/jual' },
-                { title: transaksi.kode, href: isPembelian ? `/laporan/beli/${transaksi.kode}` : `/laporan/jual/${transaksi.kode}` },
+                {
+                    title: isPembelian ? 'Laporan Pembelian' : 'Laporan Penjualan',
+                    href: isPembelian ? '/laporan/beli' : '/laporan/jual',
+                },
+                {
+                    title: transaksi.kode,
+                    href: isPembelian ? `/laporan/beli/${transaksi.kode}` : `/laporan/jual/${transaksi.kode}`,
+                },
             ]}
             title={`Detail ${isPembelian ? 'Pembelian' : 'Penjualan'}`}
         >
@@ -39,7 +48,7 @@ export default function ShowTransaksi() {
                 </Button>
             </div>
 
-            {/* Card Info Transaksi */}
+            {/* Info Transaksi */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                 <div className="rounded-lg border p-6">
                     <h2 className="text-2xl font-bold">Informasi Transaksi</h2>
@@ -62,11 +71,10 @@ export default function ShowTransaksi() {
                         </TableBody>
                     </Table>
                 </div>
-                {/* Spacer */}
                 <div className="hidden md:block" />
             </div>
 
-            {/* Card List Barang */}
+            {/* List Barang */}
             <div className="mt-6 rounded-lg border p-6">
                 <h2 className="-mb-2 text-2xl font-bold">{isPembelian ? 'Daftar Barang Dibeli' : 'Daftar Barang Terjual'}</h2>
                 <div className="overflow-x-auto">
@@ -76,9 +84,11 @@ export default function ShowTransaksi() {
                                 <TableHead>Nama Barang</TableHead>
                                 <TableHead>Tipe</TableHead>
                                 <TableHead>Warna</TableHead>
+                                {!isPembelian && <TableHead>Supplier</TableHead>}
                                 <TableHead>Harga {isPembelian ? 'Beli' : 'Jual'}</TableHead>
                                 {isPembelian && <TableHead>Harga Jual</TableHead>}
                                 <TableHead>Jumlah</TableHead>
+                                {isPakaiPajak && <TableHead>Pajak</TableHead>}
                                 <TableHead className="text-right">Subtotal</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -86,41 +96,38 @@ export default function ShowTransaksi() {
                             {transaksiList.map((trx) => {
                                 const hargaBeli =
                                     trx.supplier?.barangs?.find((b) => b.id === trx.barang_id)?.pivot?.harga_beli ?? trx.barang.harga_jual;
+                                const harga = isPembelian ? hargaBeli : trx.barang.harga_jual;
                                 return (
                                     <TableRow key={trx.id}>
                                         <TableCell>{trx.barang.nama}</TableCell>
                                         <TableCell>{trx.barang.tipe}</TableCell>
                                         <TableCell>{trx.barang.warna}</TableCell>
-                                        <TableCell>
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(
-                                                isPembelian ? hargaBeli : trx.barang.harga_jual,
-                                            )}
-                                        </TableCell>
+                                        {!isPembelian && <TableCell>{trx.supplier?.nama ?? '-'}</TableCell>}
+                                        <TableCell>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(harga)}</TableCell>
                                         {isPembelian && (
                                             <TableCell>
                                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(trx.barang.harga_jual)}
                                             </TableCell>
                                         )}
                                         <TableCell>{trx.jumlah}</TableCell>
+                                        {isPakaiPajak && <TableCell>{trx.pajak_persen ? `${trx.pajak_persen}%` : '-'}</TableCell>}
                                         <TableCell className="text-right">
-                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(
-                                                (isPembelian ? hargaBeli : trx.barang.harga_jual) * trx.jumlah,
-                                            )}
+                                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(harga * trx.jumlah)}
                                         </TableCell>
                                     </TableRow>
                                 );
                             })}
 
-                            {/* TOTAL JUMLAH */}
+                            {/* Total Jumlah */}
                             <TableRow>
-                                <TableCell colSpan={isPembelian ? 5 : 4} />
+                                <TableCell colSpan={isPembelian ? 5 : isPakaiPajak ? 6 : 5} />
                                 <TableCell className="text-right font-bold">Total Jumlah</TableCell>
                                 <TableCell className="text-right font-bold">{totalJumlah} pcs</TableCell>
                             </TableRow>
 
-                            {/* TOTAL HARGA */}
+                            {/* Total Harga */}
                             <TableRow>
-                                <TableCell colSpan={isPembelian ? 5 : 4} />
+                                <TableCell colSpan={isPembelian ? 5 : isPakaiPajak ? 6 : 5} />
                                 <TableCell className="text-right font-bold">Total Harga</TableCell>
                                 <TableCell className="text-right font-bold">
                                     {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(subtotal)}

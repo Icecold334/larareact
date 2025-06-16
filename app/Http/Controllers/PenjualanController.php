@@ -32,54 +32,78 @@ class PenjualanController extends Controller
      */
     public function store(Request $request)
     {
-        $kode = 'OUT' . fake()->numerify('-###-###-###');
-
-        $jenis = false;
-
         try {
-            foreach ($request->lists as $key => $val) {
+            foreach ($request->lists as $val) {
                 $item = collect($val);
                 $barang = Barang::findOrFail($item['id']);
-                $jumlahPenjualan = $item['jumlah']; // jumlah yang mau dijual
+                $jumlahPenjualan = $item['jumlah'];
 
-                // Ambil semua supplier untuk barang ini
-                $suppliers = $barang->suppliers()->get()->map(function ($supplier) use ($barang) {
-                    $in = Transaksi::where('barang_id', $barang->id)
-                        ->where('supplier_id', $supplier->id)
-                        ->where('jenis', true)
-                        ->sum('jumlah');
+                // Ambil semua transaksi masuk (pembelian)
+                $stokMasuk = Transaksi::where('barang_id', $barang->id)
+                    ->where('jenis', true)
+                    ->orderBy('created_at') // FIFO
+                    ->get();
 
-                    $out = Transaksi::where('barang_id', $barang->id)
-                        ->where('supplier_id', $supplier->id)
+                // Hitung sisa stok per transaksi masuk
+                $stokDetail = $stokMasuk->map(function ($trx) use ($barang) {
+                    $jumlahKeluar = Transaksi::where('barang_id', $barang->id)
+                        ->where('supplier_id', $trx->supplier_id)
+                        ->where('pajak_persen', $trx->pajak_persen)
                         ->where('jenis', false)
                         ->sum('jumlah');
 
-                    $supplier->stok = max(0, $in - $out);
-                    return $supplier;
-                })->filter(fn($supplier) => $supplier->stok > 0)->sortByDesc('stok')->values();
-                // dd($suppliers);
-                foreach ($suppliers as $supplier) {
-                    if ($jumlahPenjualan <= 0) {
-                        break; // Kalau sudah cukup, stop
-                    }
+                    return [
+                        'id' => $trx->id,
+                        'supplier_id' => $trx->supplier_id,
+                        'pajak' => $trx->pajak_persen,
+                        'tanggal' => $trx->created_at,
+                        'tersedia' => max(0, $trx->jumlah - $jumlahKeluar),
+                    ];
+                })->filter(fn($data) => $data['tersedia'] > 0);
 
-                    $ambil = min($jumlahPenjualan, $supplier->stok);
+                // Bagi dua: berpajak & non-pajak
+                $stokPajak = $stokDetail->where('pajak', '>', 0)->sortBy('tanggal')->values();
+                $stokTanpaPajak = $stokDetail->where('pajak', '=', 0)->sortBy('tanggal')->values();
 
-                    if ($ambil > 0) {
-                        // Buat transaksi keluarnya
-                        Transaksi::create([
-                            'kode' => $kode,
-                            'jenis' => $jenis,
-                            'barang_id' => $barang->id,
-                            'supplier_id' => $supplier->id,
-                            'jumlah' => $ambil,
-                        ]);
+                $kodeBerpajak = 'OUT' . fake()->numerify('-###-TAX');
+                $kodeNonPajak = 'OUT' . fake()->numerify('-###-NTX');
 
-                        $jumlahPenjualan -= $ambil;
-                    }
+                // Proses stok berpajak dulu
+                foreach ($stokPajak as $stok) {
+                    if ($jumlahPenjualan <= 0) break;
+
+                    $ambil = min($jumlahPenjualan, $stok['tersedia']);
+
+                    Transaksi::create([
+                        'kode' => $kodeBerpajak,
+                        'jenis' => false,
+                        'barang_id' => $barang->id,
+                        'supplier_id' => $stok['supplier_id'],
+                        'jumlah' => $ambil,
+                        'pajak_persen' => $stok['pajak'],
+                    ]);
+
+                    $jumlahPenjualan -= $ambil;
                 }
 
-                // Kalau semua supplier ga cukup stok, boleh kasih error/optional
+                // Lanjutkan ke stok tanpa pajak jika masih kurang
+                foreach ($stokTanpaPajak as $stok) {
+                    if ($jumlahPenjualan <= 0) break;
+
+                    $ambil = min($jumlahPenjualan, $stok['tersedia']);
+
+                    Transaksi::create([
+                        'kode' => $kodeNonPajak,
+                        'jenis' => false,
+                        'barang_id' => $barang->id,
+                        'supplier_id' => $stok['supplier_id'],
+                        'jumlah' => $ambil,
+                        'pajak_persen' => 0,
+                    ]);
+
+                    $jumlahPenjualan -= $ambil;
+                }
+
                 if ($jumlahPenjualan > 0) {
                     return back()->withErrors([
                         'error' => "Stok tidak cukup untuk barang {$barang->nama}. Kurang {$jumlahPenjualan} pcs.",
@@ -94,6 +118,10 @@ class PenjualanController extends Controller
             ]);
         }
     }
+
+
+
+
 
 
     /**

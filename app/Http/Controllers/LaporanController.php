@@ -15,8 +15,34 @@ class LaporanController extends Controller
     }
     public function fetch($type)
     {
-        return Transaksi::where('jenis', $type == 'beli')->with('barang', 'supplier')->orderBy('id', 'desc')->get()->unique('kode');
+        $isBeli = $type === 'beli';
+
+        $transaksis = Transaksi::where('jenis', $isBeli ? 1 : 0)
+            ->with(['barang', 'supplier'])
+            ->get();
+
+        if ($isBeli) {
+            // Untuk pembelian: cukup ambil transaksi pertama per kode, dan tampilkan supplier
+            return $transaksis
+                ->unique('kode')
+                ->values();
+        } else {
+            // Untuk penjualan: grup per kode, hitung total kotor dan info pajak
+            return $transaksis
+                ->groupBy('kode')
+                ->map(function ($group) {
+                    return [
+                        'kode' => $group->first()->kode,
+                        'created_at' => $group->first()->created_at,
+                        'menggunakan_pajak' => $group->contains(fn($trx) => $trx->pajak_persen > 0),
+                        'total_kotor' => $group->sum(fn($trx) => $trx->jumlah * ($trx->barang->harga_jual ?? 0)),
+                    ];
+                })
+                ->values();
+        }
     }
+
+
 
     public function supplierHistory($barangId, $supplierId)
     {

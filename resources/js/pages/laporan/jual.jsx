@@ -2,15 +2,21 @@
 
 import { Head, Link } from '@inertiajs/react';
 import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import { useEffect, useState } from 'react';
+import { format } from 'date-fns';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import AppLayout from '@/layouts/app-layout';
 import { ArrowUpDown, ChevronDown, Eye } from 'lucide-react';
 
-import AppLayout from '@/layouts/app-layout';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+import { Calendar } from '@/components/ui/calendar';
 
 const columns = [
     {
@@ -37,6 +43,26 @@ const columns = [
         },
     },
     {
+        accessorKey: 'menggunakan_pajak',
+        header: 'Menggunakan Pajak',
+        cell: ({ row }) => <div>{row.original.menggunakan_pajak ? 'Ya' : 'Tidak'}</div>,
+    },
+    {
+        accessorKey: 'total_kotor',
+        header: 'Total Kotor',
+        cell: ({ row }) => {
+            const total = Number(row.original.total_kotor ?? 0);
+            return (
+                <div>
+                    {new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                    }).format(total)}
+                </div>
+            );
+        },
+    },
+    {
         id: 'actions',
         enableHiding: false,
         header: () => <div className="text-center">Aksi</div>,
@@ -53,14 +79,27 @@ const columns = [
     },
 ];
 
-export function DataTable({ tableData }) {
+export function DataTable({ rawData }) {
+    const [filterTanggal, setFilterTanggal] = useState(null);
+    const [filterPajak, setFilterPajak] = useState('semua');
+
+    const filteredData = useMemo(() => {
+        return rawData.filter((item) => {
+            const tanggalMatch = filterTanggal ? format(new Date(item.created_at), 'yyyy-MM-dd') === format(filterTanggal, 'yyyy-MM-dd') : true;
+
+            const pajakMatch = filterPajak === 'semua' ? true : filterPajak === 'ya' ? item.menggunakan_pajak : !item.menggunakan_pajak;
+
+            return tanggalMatch && pajakMatch;
+        });
+    }, [rawData, filterTanggal, filterPajak]);
+
     const [sorting, setSorting] = useState([]);
     const [columnFilters, setColumnFilters] = useState([]);
     const [columnVisibility, setColumnVisibility] = useState({});
     const [rowSelection, setRowSelection] = useState([]);
 
     const table = useReactTable({
-        data: tableData,
+        data: filteredData,
         columns,
         onSortingChange: setSorting,
         onColumnFiltersChange: setColumnFilters,
@@ -80,13 +119,49 @@ export function DataTable({ tableData }) {
 
     return (
         <div className="w-full">
-            <div className="flex items-center justify-between py-4">
-                <Input
-                    placeholder="Cari Kode Transaksi"
-                    value={String(table.getColumn('kode')?.getFilterValue() ?? '')}
-                    onChange={(event) => table.getColumn('kode')?.setFilterValue(event.target.value)}
-                    className="max-w-sm"
-                />
+            <div className="flex flex-wrap items-center justify-between gap-4 py-4">
+                <div className="flex flex-wrap gap-4">
+                    {/* Tanggal */}
+                    <div className="flex items-center gap-2">
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="outline" className="w-[180px] justify-start text-left font-normal">
+                                    {filterTanggal ? format(filterTanggal, 'dd/MM/yyyy') : 'Pilih Tanggal'}
+                                </Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-auto p-0">
+                                <Calendar mode="single" selected={filterTanggal} onSelect={setFilterTanggal} initialFocus />
+                            </PopoverContent>
+                        </Popover>
+
+                        {filterTanggal && (
+                            <Button variant="ghost" size="sm" onClick={() => setFilterTanggal(null)} className="text-xs text-red-500">
+                                Reset
+                            </Button>
+                        )}
+                    </div>
+
+                    {/* Pajak */}
+                    <Select value={filterPajak} onValueChange={setFilterPajak}>
+                        <SelectTrigger className="w-[160px]">
+                            <SelectValue placeholder="Filter Pajak" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="semua">Semua Pajak</SelectItem>
+                            <SelectItem value="ya">Ya</SelectItem>
+                            <SelectItem value="tidak">Tidak</SelectItem>
+                        </SelectContent>
+                    </Select>
+
+                    {/* Kode */}
+                    <Input
+                        placeholder="Cari Kode Transaksi"
+                        value={String(table.getColumn('kode')?.getFilterValue() ?? '')}
+                        onChange={(event) => table.getColumn('kode')?.setFilterValue(event.target.value)}
+                        className="max-w-sm"
+                    />
+                </div>
+
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="outline">
@@ -183,7 +258,7 @@ export default function Page() {
     return (
         <AppLayout breadcrumbs={breadcrumbs} title="Laporan Penjualan">
             <Head title="Laporan Penjualan" />
-            <DataTable tableData={tableData} />
+            <DataTable rawData={tableData} />
         </AppLayout>
     );
 }
