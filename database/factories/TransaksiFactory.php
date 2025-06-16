@@ -26,6 +26,7 @@ class TransaksiFactory extends Factory
             'barang_id' => Barang::inRandomOrder()->value('id') ?? Barang::factory(),
             'supplier_id' => Supplier::inRandomOrder()->value('id') ?? Supplier::factory(),
             'jumlah' => fake()->numberBetween(50, 500),
+            'pajak_persen' => fake()->randomElement([0, 5, 10, 11]),
         ];
     }
 }

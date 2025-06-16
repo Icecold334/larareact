@@ -16,8 +16,9 @@ return new class extends Migration
             $table->string('kode');
             $table->boolean('jenis');
             $table->foreignId('barang_id')->constrained('barangs');
-            $table->foreignId('supplier_id')->constrained('barangs');
+            $table->foreignId('supplier_id')->constrained('suppliers');
             $table->integer('jumlah');
+            $table->decimal('pajak_persen', 5, 2)->nullable(); // ← tambahkan untuk pajak per item
             $table->timestamps();
         });
     }

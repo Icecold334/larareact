@@ -7,39 +7,35 @@ use App\Models\Supplier;
 use App\Models\Supplierables;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Supplierables>
- */
 class SupplierablesFactory extends Factory
 {
     protected $model = Supplierables::class;
 
     public function definition(): array
     {
-        // Ambil barang random
-        $barang = Barang::inRandomOrder()->first();
+        $barang = Barang::inRandomOrder()->first() ?? Barang::factory()->create();
 
-        // Cari supplier yang belum terhubung dengan barang ini
+        // Pastikan harga jual barang logis
+        $minJual = 3000;
+        $hargaJualBarang = max((int) $barang->harga_jual, $minJual);
+
+        // Supplier belum punya relasi dengan barang ini
         $supplier = Supplier::whereDoesntHave('barangs', function ($query) use ($barang) {
             $query->where('barangs.id', $barang->id);
-        })->inRandomOrder()->first();
+        })->inRandomOrder()->first() ?? Supplier::factory()->create();
 
-        if (!$supplier) {
-            $supplier = Supplier::factory()->create();
-        }
+        // Hitung harga beli logis
+        $hargaBeli = fake()->numberBetween(1000, $hargaJualBarang - 1000);
 
-        // Harga jual ada di barang
-        $hargaJualBarang = (int) $barang->harga_jual;
-
-        // Pastikan harga beli lebih kecil dari harga jual
-        $hargaBeli = $this->faker->numberBetween(1000, $hargaJualBarang - 1000); // kasih margin 1000 supaya logis
+        // Harga jual untuk relasi ini (boleh sama, boleh beda dari barang utama)
+        $hargaJual = $hargaBeli + fake()->numberBetween(1000, 3000);
 
         return [
             'supplier_id' => $supplier->id,
             'supplyable_id' => $barang->id,
             'supplyable_type' => Barang::class,
             'harga_beli' => $hargaBeli,
-            // 'harga_jual' sudah tidak di sini, karena sekarang pindah ke tabel barang
+            'harga_jual' => $hargaJual,
         ];
     }
 }

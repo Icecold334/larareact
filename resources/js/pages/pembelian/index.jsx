@@ -1,15 +1,17 @@
 'use client';
+
+import { router } from '@inertiajs/react';
+import { Plus, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+
 import DispatchAlert from '@/components/dispatch-alert';
+import AppLayout from '@/layouts/app-layout';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import AppLayout from '@/layouts/app-layout';
-import { router } from '@inertiajs/react';
-import { Plus, X } from 'lucide-react';
-import { useEffect, useState } from 'react';
 
 const formatRupiah = (value) => {
     if (!value) return '';
@@ -21,10 +23,6 @@ const formatRupiah = (value) => {
 };
 
 const parseNumber = (str) => parseInt(str.replace(/[^\d]/g, ''), 10) || 0;
-
-const getBarangName = (barangList, id) => {
-    return barangList.find((b) => b.id === id)?.nama || id || '';
-};
 
 const HargaInput = ({ value, onChange, placeholder }) => (
     <div className="border-input bg-background focus-within:ring-ring focus-within:border-ring flex h-10 w-full items-center rounded-md border px-3 text-sm shadow-sm focus-within:ring-1">
@@ -42,7 +40,7 @@ const HargaInput = ({ value, onChange, placeholder }) => (
 
 const breadcrumbs = [{ title: 'Pembelian', href: '/pembelian' }];
 
-export default function () {
+export default function PembelianPage() {
     const [suppliers, setSuppliers] = useState([]);
     const [selectedSupplier, setSelectedSupplier] = useState(null);
     const [barangList, setBarangList] = useState([]);
@@ -75,6 +73,7 @@ export default function () {
                         warna: '',
                         jumlah: '',
                         hargaBeli: '',
+                        pajakPersen: '',
                     },
                 ]);
             } catch (err) {
@@ -96,6 +95,7 @@ export default function () {
                 warna: '',
                 jumlah: '',
                 hargaBeli: '',
+                pajakPersen: '',
             },
         ]);
     };
@@ -113,7 +113,6 @@ export default function () {
             supplier_id: selectedSupplier,
             rows,
         };
-        // console.log('Kirim ke server:', );
 
         router.post(`/beli`, data, {
             onSuccess: () => {
@@ -127,16 +126,20 @@ export default function () {
                         warna: '',
                         jumlah: '',
                         hargaBeli: '',
+                        hargaJual: '', // ← tambah ini
+                        pajakPersen: '',
                     },
                 ]);
             },
-            onError: (e) => {
+            onError: () => {
                 DispatchAlert({ status: false, obj: 'Pembelian', text: 'disimpan' });
             },
         });
     };
 
-    const isFormValid = rows.every((row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli);
+    const isFormValid = rows.every(
+        (row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli && row.hargaJual && row.pajakPersen !== '',
+    );
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} title="Pembelian Stok">
@@ -144,10 +147,12 @@ export default function () {
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Pilih Supplier</label>
                     <Select
+                        value={selectedSupplier?.toString()}
                         onValueChange={(val) => {
-                            const selected = suppliers.find((s) => s.id === val);
+                            const selected = suppliers.find((s) => s.id.toString() === val);
                             const event = new CustomEvent('supplier', { detail: selected });
                             window.dispatchEvent(event);
+                            setSelectedSupplier(selected.id);
                         }}
                     >
                         <SelectTrigger>
@@ -155,7 +160,7 @@ export default function () {
                         </SelectTrigger>
                         <SelectContent>
                             {suppliers.map((supplier) => (
-                                <SelectItem key={supplier.id} value={supplier.id}>
+                                <SelectItem key={supplier.id} value={supplier.id.toString()}>
                                     {supplier.nama}
                                 </SelectItem>
                             ))}
@@ -165,7 +170,7 @@ export default function () {
 
                 {selectedSupplier && (
                     <>
-                        <Table className="">
+                        <Table>
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Nama Barang</TableHead>
@@ -173,16 +178,17 @@ export default function () {
                                     <TableHead>Warna</TableHead>
                                     <TableHead>Jumlah</TableHead>
                                     <TableHead>Harga Beli</TableHead>
-                                    {/* <TableHead>Harga Jual</TableHead> */}
+                                    <TableHead>Harga Jual</TableHead>
+                                    <TableHead>Pajak (%)</TableHead>
                                     <TableHead />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {rows.map((row) => (
                                     <TableRow key={row.id}>
-                                        <TableCell className="relative">
+                                        <TableCell>
                                             <Input
-                                                value={getBarangName(barangList, row.nama)}
+                                                value={row.nama}
                                                 onChange={(e) => handleChange(row.id, 'nama', e.target.value)}
                                                 placeholder="Ketik nama barang"
                                                 onFocus={() => setFocusedRow(row.id)}
@@ -218,13 +224,21 @@ export default function () {
                                                 placeholder="Harga Beli"
                                             />
                                         </TableCell>
-                                        {/* <TableCell>
+                                        <TableCell>
                                             <HargaInput
                                                 value={row.hargaJual}
                                                 onChange={(val) => handleChange(row.id, 'hargaJual', val)}
                                                 placeholder="Harga Jual"
                                             />
-                                        </TableCell> */}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Input
+                                                type="number"
+                                                value={row.pajakPersen}
+                                                onChange={(e) => handleChange(row.id, 'pajakPersen', e.target.value)}
+                                                placeholder="Pajak"
+                                            />
+                                        </TableCell>
                                         <TableCell>
                                             {rows.length > 1 && (
                                                 <Button size="icon" variant="ghost" onClick={() => handleRemove(row.id)}>
@@ -238,7 +252,7 @@ export default function () {
                         </Table>
 
                         {isFormValid && (
-                            <div className="flex justify-between">
+                            <div className="flex justify-between pt-4">
                                 <Button variant="outline" onClick={handleAddRow}>
                                     <Plus className="mr-2 h-4 w-4" /> Tambah Baris
                                 </Button>

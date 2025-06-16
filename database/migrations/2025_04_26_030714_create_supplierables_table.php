@@ -16,7 +16,7 @@ return new class extends Migration
             $table->foreignId('supplier_id')->constrained()->onDelete('cascade');
             $table->morphs('supplyable');
             $table->integer('harga_beli');
-            // $table->integer('harga_jual');
+            $table->integer('harga_jual');
             $table->timestamps();
         });
     }

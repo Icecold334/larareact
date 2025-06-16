@@ -14,7 +14,7 @@ use Inertia\Inertia;
 
 Route::get('/', function () {
     // return Inertia::render('welcome');
-    return redirect()->to('login');
+    return redirect()->to('dashboard');
 })->name('home');
 
 Route::middleware(['auth', 'verified'])->group(function () {

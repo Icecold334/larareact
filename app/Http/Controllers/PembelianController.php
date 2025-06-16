@@ -52,13 +52,23 @@ class PembelianController extends Controller
                         'nama' => $item['nama'],
                         'tipe' => $item['tipe'],
                         'warna' => $item['warna'],
-                        'harga_jual' => 0, // Harga jual belum ditentukan, bisa dari UI nanti
+                        'harga_jual' => $item['hargaJual'] ?? 0,
                     ]
                 );
 
+                if (
+                    isset($item['hargaJual']) &&
+                    (int) $item['hargaJual'] > (int) $barang->harga_jual
+                ) {
+                    $barang->update(['harga_jual' => $item['hargaJual']]);
+                }
+
                 // Tambahkan relasi barang <-> supplier di pivot
                 $barang->suppliers()->syncWithoutDetaching([
-                    $supplier_id => ['harga_beli' => $item['hargaBeli']],
+                    $supplier_id => [
+                        'harga_beli' => $item['hargaBeli'],
+                        'harga_jual' => $item['hargaJual'] ?? 0,
+                    ],
                 ]);
 
                 // Buat transaksi masuk
@@ -68,6 +78,7 @@ class PembelianController extends Controller
                     'barang_id' => $barang->id,
                     'supplier_id' => $supplier_id,
                     'jumlah' => $item['jumlah'],
+                    'pajak_persen' => $item['pajakPersen'] ?? 0,
                 ]);
             }
 
