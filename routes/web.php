@@ -22,6 +22,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index']);
     Route::get('/kas', [KasController::class, 'arus']);
     Route::post('/kas', [KasController::class, 'saveKas']);
+    Route::get('/laporan/jual/{kode}/pdf', [LaporanController::class, 'exportPenjualan']);
     Route::get('/laporan/history/{barang}/{supplier}', [LaporanController::class, 'supplierHistory'])->name('laporan.fetch');
     Route::get('/laporan/detail/{uuid}', [LaporanController::class, 'show'])->name('laporan.show.uuid');
     Route::get('/laporan/fetch/{type}', [LaporanController::class, 'fetch'])->name('laporan.fetch');

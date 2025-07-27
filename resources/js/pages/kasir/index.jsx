@@ -67,8 +67,101 @@ export function ComboboxDemo({ className, merks, setSelectedItem }) {
     );
 }
 
+// ================= HARGA INPUT ===================
+const HargaInput = ({ value, onChange, placeholder }) => {
+    const [inputValue, setInputValue] = useState('');
+
+    useEffect(() => {
+        setInputValue(value?.toString() || '');
+    }, [value]);
+
+    const parseNumber = (str) => parseInt(str.replace(/[^\d]/g, ''), 10) || 0;
+
+    const handleChange = (e) => {
+        const raw = e.target.value;
+        setInputValue(raw);
+        const parsed = parseNumber(raw);
+        onChange(parsed);
+    };
+
+    const handleBlur = () => {
+        const parsed = parseNumber(inputValue);
+        setInputValue(parsed ? formatRupiah(parsed).replace(/^Rp\s?/, '') : '');
+    };
+
+    const handleFocus = () => {
+        setInputValue(value?.toString() || '');
+    };
+
+    const formatRupiah = (value) => {
+        if (!value) return '';
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0,
+        }).format(value);
+    };
+
+    return (
+        <div className="border-input bg-background focus-within:ring-ring focus-within:border-ring flex h-10 w-full items-center rounded-md border px-3 text-sm shadow-sm focus-within:ring-1">
+            <span className="text-muted-foreground mr-2">Rp</span>
+            <input
+                type="text"
+                inputMode="numeric"
+                className="w-full border-none bg-transparent outline-none focus-visible:ring-0"
+                value={inputValue}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                onFocus={handleFocus}
+                placeholder={placeholder}
+            />
+        </div>
+    );
+};
+
 // ================= CART ===================
 export function Cart({ setTotal, lists, setLists, setIsStokValid }) {
+    const handleHargaChange = (index, value) => {
+        setLists((prev) => {
+            const updated = [...prev];
+            updated[index].harga = value;
+            const total = updated.reduce((acc, item) => acc + item.harga * item.jumlah, 0);
+            setTotal(total);
+            return updated;
+        });
+    };
+
+    const handleJumlahChange = (index, value) => {
+        const val = parseInt(value, 10);
+        if (isNaN(val) || val < 1) return;
+
+        setLists((prev) => {
+            const updated = [...prev];
+            updated[index].jumlah = val;
+            const total = updated.reduce((acc, item) => acc + item.harga * item.jumlah, 0);
+            setTotal(total);
+
+            const stokValid = updated.every((item) => item.jumlah <= item.stok);
+            setIsStokValid(stokValid);
+
+            return updated;
+        });
+    };
+
+    const handleRemoveItem = (index) => {
+        setLists((prev) => {
+            const updated = [...prev];
+            updated.splice(index, 1);
+            const total = updated.reduce((acc, item) => acc + item.harga * item.jumlah, 0);
+            setTotal(total);
+
+            const stokValid = updated.every((item) => item.jumlah <= item.stok);
+            setIsStokValid(stokValid);
+
+            return updated;
+        });
+    };
+
     useEffect(() => {
         const handleAddList = ({ detail }) => {
             const formattedData = {
@@ -101,37 +194,6 @@ export function Cart({ setTotal, lists, setLists, setIsStokValid }) {
         window.addEventListener('addList', handleAddList);
         return () => window.removeEventListener('addList', handleAddList);
     }, [setLists, setTotal]);
-
-    const handleJumlahChange = (index, value) => {
-        const val = parseInt(value, 10);
-        if (isNaN(val) || val < 1) return;
-
-        setLists((prev) => {
-            const updated = [...prev];
-            updated[index].jumlah = val;
-            const total = updated.reduce((acc, item) => acc + item.harga * item.jumlah, 0);
-            setTotal(total);
-
-            const stokValid = updated.every((item) => item.jumlah <= item.stok);
-            setIsStokValid(stokValid);
-
-            return updated;
-        });
-    };
-
-    const handleRemoveItem = (index) => {
-        setLists((prev) => {
-            const updated = [...prev];
-            updated.splice(index, 1);
-            const total = updated.reduce((acc, item) => acc + item.harga * item.jumlah, 0);
-            setTotal(total);
-
-            const stokValid = updated.every((item) => item.jumlah <= item.stok);
-            setIsStokValid(stokValid);
-
-            return updated;
-        });
-    };
 
     return (
         <Table>
@@ -176,7 +238,9 @@ export function Cart({ setTotal, lists, setLists, setIsStokValid }) {
                                     <div className="text-muted-foreground text-xs">Sisa: {item.stok}</div>
                                 </div>
                             </TableCell>
-                            <TableCell>{new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.harga)}</TableCell>
+                            <TableCell>
+                                <HargaInput value={item.harga} onChange={(val) => handleHargaChange(i, val)} placeholder="Harga" />
+                            </TableCell>
                             <TableCell className="text-right">
                                 {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(item.harga * item.jumlah)}
                             </TableCell>
@@ -216,7 +280,11 @@ export default function Kasir() {
     }, []);
 
     const formatCurrency = (amount) => {
-        const [integerPart, decimalPart] = new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 2 })
+        const [integerPart, decimalPart] = new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 2,
+        })
             .format(amount)
             .split(',');
         return (
@@ -273,9 +341,7 @@ export default function Kasir() {
                                 setSelectedItem(null);
                                 setTotal(0);
                                 setLists([]);
-
-                                // 🔄 Tambahkan ini agar data stok diperbarui
-                                fetchData();
+                                fetchData(); // refresh stok
                             },
                             onError: () => {
                                 DispatchAlert({ status: false, obj: 'Penjualan', text: 'disimpan' });

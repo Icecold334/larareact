@@ -40,7 +40,8 @@ const HargaInput = ({ value, onChange, placeholder }) => (
 
 const breadcrumbs = [{ title: 'Pembelian', href: '/pembelian' }];
 
-export default function PembelianPage() {
+export default function () {
+    const [useTax, setUseTax] = useState(false);
     const [suppliers, setSuppliers] = useState([]);
     const [selectedSupplier, setSelectedSupplier] = useState('');
     const [barangList, setBarangList] = useState([]);
@@ -109,9 +110,14 @@ export default function PembelianPage() {
     };
 
     const handleSubmit = () => {
+        const pajakValue = useTax ? 2 : 0;
+
         const data = {
             supplier_id: selectedSupplier,
-            rows,
+            rows: rows.map((row) => ({
+                ...row,
+                pajakPersen: pajakValue,
+            })),
         };
 
         router.post(`/beli`, data, {
@@ -126,47 +132,49 @@ export default function PembelianPage() {
                         warna: '',
                         jumlah: '',
                         hargaBeli: '',
-                        pajakPersen: '',
                     },
                 ]);
             },
             onError: ({ error }) => {
                 console.log(error);
-
                 DispatchAlert({ status: false, obj: 'Pembelian', text: 'disimpan' });
             },
         });
     };
 
-    const isFormValid = rows.every(
-        (row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli && row.pajakPersen !== '',
-    );
+    const isFormValid = rows.every((row) => row.nama && row.tipe?.trim() && row.warna?.trim() && row.jumlah && row.hargaBeli);
 
     return (
         <AppLayout breadcrumbs={breadcrumbs} title="Pembelian Stok">
             <Card className="space-y-6 overflow-visible p-6">
                 <div className="space-y-2">
                     <label className="text-sm font-medium">Pilih Supplier</label>
-                    <Select
-                        value={selectedSupplier?.toString()}
-                        onValueChange={(val) => {
-                            const selected = suppliers.find((s) => s.id.toString() === val);
-                            const event = new CustomEvent('supplier', { detail: selected });
-                            window.dispatchEvent(event);
-                            setSelectedSupplier(val); // ← Langsung pakai val string
-                        }}
-                    >
-                        <SelectTrigger>
-                            <SelectValue placeholder="Pilih Supplier" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {suppliers.map((supplier) => (
-                                <SelectItem key={supplier.id} value={supplier.id.toString()}>
-                                    {supplier.nama}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-4">
+                        <Select
+                            value={selectedSupplier?.toString()}
+                            onValueChange={(val) => {
+                                const selected = suppliers.find((s) => s.id.toString() === val);
+                                const event = new CustomEvent('supplier', { detail: selected });
+                                window.dispatchEvent(event);
+                                setSelectedSupplier(val);
+                            }}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Pilih Supplier" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {suppliers.map((supplier) => (
+                                    <SelectItem key={supplier.id} value={supplier.id.toString()}>
+                                        {supplier.nama}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        <Button variant={useTax ? 'default' : 'outline'} onClick={() => setUseTax(!useTax)}>
+                            {useTax ? 'Pakai Pajak' : 'Tanpa Pajak'}
+                        </Button>
+                    </div>
                 </div>
 
                 {selectedSupplier && (
@@ -179,10 +187,10 @@ export default function PembelianPage() {
                                     <TableHead>Warna</TableHead>
                                     <TableHead>Jumlah</TableHead>
                                     <TableHead>Harga Beli</TableHead>
-                                    <TableHead>Pajak (%)</TableHead>
                                     <TableHead />
                                 </TableRow>
                             </TableHeader>
+
                             <TableBody>
                                 {rows.map((row) => (
                                     <TableRow key={row.id}>
@@ -222,14 +230,6 @@ export default function PembelianPage() {
                                                 value={row.hargaBeli}
                                                 onChange={(val) => handleChange(row.id, 'hargaBeli', val)}
                                                 placeholder="Harga Beli"
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Input
-                                                type="number"
-                                                value={row.pajakPersen}
-                                                onChange={(e) => handleChange(row.id, 'pajakPersen', e.target.value)}
-                                                placeholder="Pajak"
                                             />
                                         </TableCell>
                                         <TableCell>

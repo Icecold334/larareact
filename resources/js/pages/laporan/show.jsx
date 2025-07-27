@@ -42,11 +42,11 @@ export default function ShowTransaksi() {
             title={`Detail ${isPembelian ? 'Pembelian' : 'Penjualan'}`}
         >
             {/* Tombol Kembali */}
-            <div className="mb-4 flex justify-end">
+            {/* <div className="mb-4 flex justify-end">
                 <Button variant="outline" onClick={() => history.back()}>
                     Kembali
                 </Button>
-            </div>
+            </div> */}
 
             {/* Info Transaksi */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -71,7 +71,20 @@ export default function ShowTransaksi() {
                         </TableBody>
                     </Table>
                 </div>
-                <div className="hidden md:block" />
+                <div className="mb-4 flex justify-end gap-4">
+                    {!isPembelian && (
+                        <Button
+                            onClick={() => {
+                                window.location.href = `/laporan/jual/${transaksi.kode}/pdf`;
+                            }}
+                        >
+                            Unduh PDF
+                        </Button>
+                    )}
+                    <Button variant="outline" onClick={() => history.back()}>
+                        Kembali
+                    </Button>
+                </div>
             </div>
 
             {/* List Barang */}
@@ -96,7 +109,7 @@ export default function ShowTransaksi() {
                             {transaksiList.map((trx) => {
                                 const hargaBeli =
                                     trx.supplier?.barangs?.find((b) => b.id === trx.barang_id)?.pivot?.harga_beli ?? trx.barang.harga_jual;
-                                const harga = isPembelian ? hargaBeli : trx.barang.harga_jual;
+                                const harga = isPembelian ? hargaBeli : trx.harga_jual;
                                 return (
                                     <TableRow key={trx.id}>
                                         <TableCell>{trx.barang.nama}</TableCell>

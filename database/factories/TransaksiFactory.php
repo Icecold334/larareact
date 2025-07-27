@@ -20,12 +20,14 @@ class TransaksiFactory extends Factory
     {
         $jenis = fake()->boolean;
         $kode = ($jenis ? 'IN' : 'OUT') . fake()->numerify('-###-###-###');
+        $barang = Barang::inRandomOrder()->first();
         return [
             'kode' => $kode,
             'jenis' => $jenis,
-            'barang_id' => Barang::inRandomOrder()->value('id') ?? Barang::factory(),
+            'barang_id' => $barang->id,
             'supplier_id' => Supplier::inRandomOrder()->value('id') ?? Supplier::factory(),
             'jumlah' => fake()->numberBetween(50, 500),
+            'harga_jual' => !$jenis ? $barang->harga_jual : null,
             'pajak_persen' => fake()->randomElement([0, 5, 10, 11]),
         ];
     }

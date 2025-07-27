@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Transaksi;
 use Inertia\Inertia;
 use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class LaporanController extends Controller
 {
@@ -35,7 +36,7 @@ class LaporanController extends Controller
                         'kode' => $group->first()->kode,
                         'created_at' => $group->first()->created_at,
                         'menggunakan_pajak' => $group->contains(fn($trx) => $trx->pajak_persen > 0),
-                        'total_kotor' => $group->sum(fn($trx) => $trx->jumlah * ($trx->barang->harga_jual ?? 0)),
+                        'total_kotor' => $group->sum(fn($trx) => $trx->jumlah * ($trx->harga_jual ?? 0)),
                     ];
                 })
                 ->values();
@@ -60,5 +61,31 @@ class LaporanController extends Controller
         $transaksi = Transaksi::with('barang', 'supplier', 'barang.suppliers', 'supplier.barangs')->where('kode', $kode)->get();
         // dd($transaksi);
         return Inertia::render('laporan/show', compact('transaksi'));
+    }
+
+
+
+    public function exportPenjualan($kode)
+    {
+        $transaksiList = Transaksi::with(['barang', 'supplier', 'barang.suppliers'])
+            ->where('kode', $kode)
+            ->where('jenis', false)
+            ->get();
+
+        if ($transaksiList->isEmpty()) {
+            abort(404, 'Transaksi tidak ditemukan');
+        }
+
+        $subtotal = $transaksiList->sum(function ($trx) {
+            return $trx->harga_jual * $trx->jumlah;
+        });
+
+        $pdf = Pdf::loadView('pdf.penjualan', [
+            'transaksiList' => $transaksiList,
+            'subtotal' => $subtotal,
+            'kode' => $kode,
+        ])->setPaper('A4', 'portrait');
+
+        return $pdf->download("Penjualan-{$kode}.pdf");
     }
 }

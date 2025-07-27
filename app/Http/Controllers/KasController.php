@@ -21,7 +21,7 @@ class KasController extends Controller
         foreach ($transaksis as $trx) {
             if (!$trx->jenis) {
                 // Penjualan: harga_jual dari barang
-                $total_penjualan += $trx->jumlah * $trx->barang->harga_jual;
+                $total_penjualan += $trx->jumlah * $trx->harga_jual;
             } else {
                 // Pembelian: harga_beli dari supplierables (by supplier_id & barang_id)
                 $harga_beli = Supplierables::where('supplyable_type', 'App\Models\Barang')
@@ -68,7 +68,7 @@ class KasController extends Controller
         foreach ($transaksis as $trx) {
             if ($trx->jenis) {
                 // Penjualan → harga dari barang
-                $totalPenjualan += $trx->jumlah * (int)$trx->barang->harga_jual;
+                $totalPenjualan += $trx->jumlah * (int)$trx->harga_jual;
             } else {
                 // Pembelian → harga dari supplierables
                 $hargaBeli = Supplierables::where('supplyable_type', 'App\Models\Barang')

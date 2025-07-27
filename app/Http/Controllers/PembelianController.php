@@ -39,10 +39,9 @@ class PembelianController extends Controller
         try {
             foreach ($request->rows as $val) {
                 $item = collect($val);
-
                 // Hitung harga jual (harga beli + 2%)
                 $hargaBeli = (int) $item['hargaBeli'];
-                $hargaJualBaru = $hargaBeli + ($hargaBeli * 0.02);
+                $hargaJualBaru = $hargaBeli + ($val['pajakPersen'] == 0 ? 0 : ($hargaBeli * 0.02));
 
                 // Cari atau buat barang berdasarkan kombinasi nama + tipe + warna
                 $barang = Barang::firstOrCreate(

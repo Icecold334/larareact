@@ -37,6 +37,7 @@ class PenjualanController extends Controller
                 $item = collect($val);
                 $barang = Barang::findOrFail($item['id']);
                 $jumlahPenjualan = $item['jumlah'];
+                $hargaJual = $item['harga']; // ambil harga jual dari frontend
 
                 // Ambil semua transaksi masuk (pembelian)
                 $stokMasuk = Transaksi::where('barang_id', $barang->id)
@@ -81,6 +82,7 @@ class PenjualanController extends Controller
                         'supplier_id' => $stok['supplier_id'],
                         'jumlah' => $ambil,
                         'pajak_persen' => $stok['pajak'],
+                        'harga_jual' => $hargaJual, // harga jual disimpan
                     ]);
 
                     $jumlahPenjualan -= $ambil;
@@ -99,6 +101,7 @@ class PenjualanController extends Controller
                         'supplier_id' => $stok['supplier_id'],
                         'jumlah' => $ambil,
                         'pajak_persen' => 0,
+                        'harga_jual' => $hargaJual, // harga jual disimpan
                     ]);
 
                     $jumlahPenjualan -= $ambil;
