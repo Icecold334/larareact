@@ -1,31 +1,32 @@
 'use client';
 
-import { Head, Link } from '@inertiajs/react';
-import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
-import { format } from 'date-fns';
-import { useEffect, useMemo, useState } from 'react';
-
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
+import { Head, Link } from '@inertiajs/react';
+import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable } from '@tanstack/react-table';
+import { format, getMonth, getYear } from 'date-fns';
 import { ArrowUpDown, ChevronDown, Eye } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-
 import { Calendar } from '@/components/ui/calendar';
-import { getMonth, getYear } from 'date-fns';
-
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+// === Dynamic Date Picker ===
 function DynamicDatePicker({ type, selectedDate, onSelect }) {
     if (type === 'harian') {
         return <Calendar mode="single" selected={selectedDate} onSelect={onSelect} initialFocus />;
     }
 
     if (type === 'bulanan') {
-        const months = Array.from({ length: 12 }, (_, i) => i); // 0–11
+        const months = Array.from({ length: 12 }, (_, i) => i);
         const currentYear = new Date().getFullYear();
         const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
 
@@ -105,7 +106,23 @@ function DynamicDatePicker({ type, selectedDate, onSelect }) {
     return null;
 }
 
+// === Columns ===
 const columns = [
+    {
+        id: 'select',
+        header: ({ table }) => (
+            <Checkbox
+                checked={table.getIsAllPageRowsSelected()}
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                aria-label="Select all"
+            />
+        ),
+        cell: ({ row }) => (
+            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+    },
     {
         accessorKey: 'kode',
         header: ({ column }) => (
@@ -166,11 +183,21 @@ const columns = [
     },
 ];
 
+// === DataTable ===
 export function DataTable({ rawData }) {
     const [filterPajak, setFilterPajak] = useState('semua');
     const [filterTanggalType, setFilterTanggalType] = useState('harian');
     const [filterTanggal, setFilterTanggal] = useState(null);
+    // state tambahan
+    const [openDialog, setOpenDialog] = useState(false);
+    const [selectedAlamat, setSelectedAlamat] = useState(null);
+    const [selectedRows, setSelectedRows] = useState([]);
 
+    // daftar alamat bisa hardcode dulu
+    const alamatList = [
+        { id: 1, label: 'Berkah Jaya', detail: 'Jl Yosodipuro 133, Solo' },
+        { id: 2, label: 'Toko Sinto', detail: 'Blok H5, Pasar Klewer, Solo' },
+    ];
     const filteredData = useMemo(() => {
         return rawData.filter((item) => {
             const itemDate = new Date(item.created_at);
@@ -196,7 +223,7 @@ export function DataTable({ rawData }) {
     const [sorting, setSorting] = useState([]);
     const [columnFilters, setColumnFilters] = useState([]);
     const [columnVisibility, setColumnVisibility] = useState({});
-    const [rowSelection, setRowSelection] = useState([]);
+    const [rowSelection, setRowSelection] = useState({});
 
     const table = useReactTable({
         data: filteredData,
@@ -221,7 +248,7 @@ export function DataTable({ rawData }) {
         <div className="w-full">
             <div className="flex flex-wrap items-center justify-between gap-4 py-4">
                 <div className="flex flex-wrap gap-4">
-                    {/* Tanggal */}
+                    {/* Filter tanggal */}
                     <div className="flex items-center gap-2">
                         <Select value={filterTanggalType} onValueChange={setFilterTanggalType}>
                             <SelectTrigger className="w-[120px]">
@@ -258,7 +285,7 @@ export function DataTable({ rawData }) {
                         )}
                     </div>
 
-                    {/* Pajak */}
+                    {/* Filter Pajak */}
                     <Select value={filterPajak} onValueChange={setFilterPajak}>
                         <SelectTrigger className="w-[160px]">
                             <SelectValue placeholder="Filter Pajak" />
@@ -270,7 +297,7 @@ export function DataTable({ rawData }) {
                         </SelectContent>
                     </Select>
 
-                    {/* Kode */}
+                    {/* Filter kode */}
                     <Input
                         placeholder="Cari Kode Transaksi"
                         value={String(table.getColumn('kode')?.getFilterValue() ?? '')}
@@ -279,30 +306,48 @@ export function DataTable({ rawData }) {
                     />
                 </div>
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
-                            Tampilkan <ChevronDown />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {table
-                            .getAllColumns()
-                            .filter((column) => column.getCanHide())
-                            .map((column) => (
-                                <DropdownMenuCheckboxItem
-                                    key={column.id}
-                                    className="capitalize"
-                                    checked={column.getIsVisible()}
-                                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                                >
-                                    {column.id}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-2">
+                    {/* Export PDF */}
+                    <Button
+                        onClick={() => {
+                            const rows = table.getSelectedRowModel().rows;
+                            if (!rows.length) {
+                                alert('Pilih minimal 1 transaksi');
+                                return;
+                            }
+                            setSelectedRows(rows);
+                            setOpenDialog(true); // buka modal
+                        }}
+                    >
+                        Download PDF
+                    </Button>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                Tampilkan <ChevronDown />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {table
+                                .getAllColumns()
+                                .filter((column) => column.getCanHide())
+                                .map((column) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        className="capitalize"
+                                        checked={column.getIsVisible()}
+                                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                                    >
+                                        {column.id}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
 
+            {/* Table */}
             <div className="rounded-md border">
                 <Table>
                     <TableHeader>
@@ -336,6 +381,7 @@ export function DataTable({ rawData }) {
                 </Table>
             </div>
 
+            {/* Pagination */}
             <div className="flex items-center justify-end space-x-2 py-4">
                 <div className="text-muted-foreground flex-1 text-sm">Menampilkan {table.getFilteredRowModel().rows.length} data.</div>
                 <div className="space-x-2">
@@ -347,6 +393,46 @@ export function DataTable({ rawData }) {
                     </Button>
                 </div>
             </div>
+            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Pilih Alamat</DialogTitle>
+                    </DialogHeader>
+
+                    <RadioGroup value={selectedAlamat} onValueChange={setSelectedAlamat}>
+                        {alamatList.map((alamat) => (
+                            <div key={alamat.id} className="flex items-center space-x-2">
+                                <RadioGroupItem value={String(alamat.id)} id={`alamat-${alamat.id}`} />
+                                <Label htmlFor={`alamat-${alamat.id}`}>
+                                    <div className="font-medium">{alamat.label}</div>
+                                    <div className="text-muted-foreground text-sm">{alamat.detail}</div>
+                                </Label>
+                            </div>
+                        ))}
+                    </RadioGroup>
+
+                    <DialogFooter>
+                        <Button
+                            onClick={() => {
+                                if (!selectedAlamat) {
+                                    alert('Silakan pilih alamat terlebih dahulu');
+                                    return;
+                                }
+
+                                selectedRows.forEach((row) => {
+                                    const kode = row.original.kode;
+                                    const url = `/laporan/jual/${kode}/${selectedAlamat}/pdf`;
+                                    window.open(url, '_blank');
+                                });
+
+                                setOpenDialog(false);
+                            }}
+                        >
+                            Konfirmasi
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }

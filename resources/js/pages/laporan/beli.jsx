@@ -5,14 +5,34 @@ import { flexRender, getCoreRowModel, getFilteredRowModel, getPaginationRowModel
 import { useEffect, useState } from 'react';
 
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowUpDown, ChevronDown, Eye } from 'lucide-react';
 
 import AppLayout from '@/layouts/app-layout';
 
+// === Columns ===
 const columns = [
+    {
+        id: 'select',
+        header: ({ table }) => (
+            <Checkbox
+                checked={table.getIsAllPageRowsSelected()}
+                onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                aria-label="Select all"
+            />
+        ),
+        cell: ({ row }) => (
+            <Checkbox checked={row.getIsSelected()} onCheckedChange={(value) => row.toggleSelected(!!value)} aria-label="Select row" />
+        ),
+        enableSorting: false,
+        enableHiding: false,
+    },
     {
         accessorKey: 'kode',
         header: ({ column }) => (
@@ -46,7 +66,7 @@ const columns = [
         ),
         cell: ({ row }) => {
             const date = new Date(row.getValue('created_at'));
-            return <div>{date.toLocaleString('id-ID')}</div>; // ← tampilkan jam juga
+            return <div>{date.toLocaleString('id-ID')}</div>;
         },
     },
     {
@@ -66,11 +86,16 @@ const columns = [
     },
 ];
 
+// === DataTable ===
 export function DataTable({ tableData }) {
     const [sorting, setSorting] = useState([]);
     const [columnFilters, setColumnFilters] = useState([]);
     const [columnVisibility, setColumnVisibility] = useState({});
-    const [rowSelection, setRowSelection] = useState([]);
+    const [rowSelection, setRowSelection] = useState({});
+
+    const [openDialog, setOpenDialog] = useState(false);
+    const [selectedRows, setSelectedRows] = useState([]);
+    const [selectedAlamat, setSelectedAlamat] = useState('1'); // default alamat
 
     const table = useReactTable({
         data: tableData,
@@ -91,6 +116,25 @@ export function DataTable({ tableData }) {
         },
     });
 
+    const handleExport = () => {
+        const rows = table.getSelectedRowModel().rows;
+        if (!rows.length) {
+            alert('Pilih minimal 1 transaksi');
+            return;
+        }
+        setSelectedRows(rows);
+        setOpenDialog(true);
+    };
+
+    const confirmExport = () => {
+        setOpenDialog(false);
+        selectedRows.forEach((row) => {
+            const kode = row.original.kode;
+            const url = `/laporan/beli/${kode}/${selectedAlamat}/pdf`;
+            window.open(url, '_blank');
+        });
+    };
+
     return (
         <div className="w-full">
             <div className="flex items-center justify-between py-4">
@@ -101,28 +145,32 @@ export function DataTable({ tableData }) {
                     className="max-w-sm"
                 />
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="outline">
-                            Tampilkan <ChevronDown />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {table
-                            .getAllColumns()
-                            .filter((column) => column.getCanHide())
-                            .map((column) => (
-                                <DropdownMenuCheckboxItem
-                                    key={column.id}
-                                    className="capitalize"
-                                    checked={column.getIsVisible()}
-                                    onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                                >
-                                    {column.id}
-                                </DropdownMenuCheckboxItem>
-                            ))}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex items-center gap-2">
+                    <Button onClick={handleExport}>Download PDF</Button>
+
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline">
+                                Tampilkan <ChevronDown />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {table
+                                .getAllColumns()
+                                .filter((column) => column.getCanHide())
+                                .map((column) => (
+                                    <DropdownMenuCheckboxItem
+                                        key={column.id}
+                                        className="capitalize"
+                                        checked={column.getIsVisible()}
+                                        onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                                    >
+                                        {column.id}
+                                    </DropdownMenuCheckboxItem>
+                                ))}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             </div>
 
             <div className="rounded-md border">
@@ -169,6 +217,33 @@ export function DataTable({ tableData }) {
                     </Button>
                 </div>
             </div>
+
+            {/* Dialog pilih alamat */}
+            <Dialog open={openDialog} onOpenChange={setOpenDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Pilih Alamat</DialogTitle>
+                    </DialogHeader>
+
+                    <RadioGroup value={selectedAlamat} onValueChange={setSelectedAlamat} className="space-y-2">
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="1" id="alamat1" />
+                            <Label htmlFor="alamat1">Berkah Jaya Jl Yosodipuro 133 Solo</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <RadioGroupItem value="2" id="alamat2" />
+                            <Label htmlFor="alamat2">Toko Sinto Blok H5 Pasar Klewer Solo</Label>
+                        </div>
+                    </RadioGroup>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setOpenDialog(false)}>
+                            Batal
+                        </Button>
+                        <Button onClick={confirmExport}>Export</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 }
@@ -186,8 +261,7 @@ export default function Page() {
     async function fetchData() {
         const response = await fetch('/laporan/fetch/beli');
         const data = await response.json();
-        const parsedData = Object.values(data); // <- ini penting!
-
+        const parsedData = Object.values(data);
         setTableData(parsedData);
     }
 

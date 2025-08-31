@@ -72,7 +72,15 @@ export default function ShowTransaksi() {
                     </Table>
                 </div>
                 <div className="mb-4 flex justify-end gap-4">
-                    {!isPembelian && (
+                    {isPembelian ? (
+                        <Button
+                            onClick={() => {
+                                window.location.href = `/laporan/beli/${transaksi.kode}/pdf`;
+                            }}
+                        >
+                            Unduh PDF
+                        </Button>
+                    ) : (
                         <Button
                             onClick={() => {
                                 window.location.href = `/laporan/jual/${transaksi.kode}/pdf`;
@@ -81,6 +89,7 @@ export default function ShowTransaksi() {
                             Unduh PDF
                         </Button>
                     )}
+
                     <Button variant="outline" onClick={() => history.back()}>
                         Kembali
                     </Button>
